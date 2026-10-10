@@ -1,11 +1,31 @@
 -- =============================================================================
--- BASE DE DATOS: firmeza_db
--- MODELO RELACIONAL COMPLETO (DOMINIO + SEGURIDAD IDENTITY)
--- PLATAFORMA FIRMEZA
+-- BASE DE DATOS: firmeza_db (Motor: PostgreSQL 14+)
+-- PROPOSITO:
+--   Script DDL (Data Definition Language) principal para la creación de la 
+--   estructura completa de la base de datos de la plataforma Firmeza.
+-- 
+-- ORIGEN DE LOS DATOS Y ORDEN DE EJECUCIÓN:
+--   1. Este script debe ejecutarse PRIMERO sobre la base de datos vacía 'firmeza_db'.
+--   2. Crea las tablas de seguridad gestionadas por ASP.NET Core Identity (prefijo AspNet*).
+--   3. Crea las 11 tablas del dominio comercial y logístico:
+--      - categorias (clasificación de materiales y ferretería)
+--      - proveedores (empresas y distribuidores aliados)
+--      - metodos_pago (formas de recaudo comercial)
+--      - productos (catálogo con categoría y proveedor)
+--      - clientes (con documento, edad y vínculo Identity user_id)
+--      - ventas (facturación con cliente y método de pago)
+--      - detalles_venta (renglones de venta)
+--      - despachos (entregas y logística en obra de construcción)
+--      - movimientos_inventario (auditoría Kardex y trazabilidad)
+--      - vehiculos (flota y maquinaria para fletes/alquiler)
+--      - alquileres (contratos de alquiler de maquinaria/vehículos a clientes)
+--   4. Crea índices para optimización de consultas B-Tree en llaves foráneas y campos de búsqueda.
+--   5. Inserta datos mínimos iniciales para verificar la conectividad de la API.
 -- =============================================================================
 
 -- =============================================================================
 -- PARTE 1: TABLAS DE AUTENTICACIÓN Y ROLES (ASP.NET CORE IDENTITY)
+-- Permite autenticación JWT, gestión de roles (Admin, etc.) y control de acceso.
 -- =============================================================================
 
 -- 1. Roles del Sistema
@@ -97,23 +117,58 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UserNameIndex" ON "AspNetUsers" ("NormalizedU
 
 
 -- =============================================================================
--- PARTE 2: TABLAS DEL DOMINIO COMERCIAL
+-- PARTE 2: TABLAS DEL DOMINIO COMERCIAL Y OPERACIONAL (11 TABLAS)
 -- =============================================================================
 
--- 8. Clientes
+-- 8. Categorías de Productos
+CREATE TABLE IF NOT EXISTS categorias (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Proveedores
+CREATE TABLE IF NOT EXISTS proveedores (
+    id SERIAL PRIMARY KEY,
+    nit VARCHAR(30) NOT NULL UNIQUE,
+    razon_social VARCHAR(150) NOT NULL,
+    contacto_nombre VARCHAR(100),
+    telefono VARCHAR(30),
+    email VARCHAR(150),
+    direccion VARCHAR(200),
+    ciudad VARCHAR(100),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. Métodos de Pago
+CREATE TABLE IF NOT EXISTS metodos_pago (
+    id SERIAL PRIMARY KEY,
+    codigo VARCHAR(20) NOT NULL UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- 11. Clientes
 CREATE TABLE IF NOT EXISTS clientes (
     id SERIAL PRIMARY KEY,
+    user_id TEXT,
     identificacion VARCHAR(20) NOT NULL UNIQUE,
     nombres VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     telefono VARCHAR(20),
     direccion VARCHAR(200),
+    edad INT CHECK (edad >= 0),
     activo BOOLEAN NOT NULL DEFAULT TRUE,
-    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_clientes_usuario FOREIGN KEY (user_id) REFERENCES "AspNetUsers"("Id") ON DELETE SET NULL
 );
 
--- 9. Productos
+-- 12. Productos (Catálogo de Materiales y Ferretería)
 CREATE TABLE IF NOT EXISTS productos (
     id SERIAL PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
@@ -121,24 +176,30 @@ CREATE TABLE IF NOT EXISTS productos (
     descripcion TEXT,
     precio NUMERIC(12, 2) NOT NULL CHECK (precio >= 0),
     stock INT NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    categoria_id INT,
+    proveedor_id INT,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
-    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_productos_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL,
+    CONSTRAINT fk_productos_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id) ON DELETE SET NULL
 );
 
--- 10. Ventas (Encabezado)
+-- 13. Ventas (Encabezado de Transacciones Comerciales)
 CREATE TABLE IF NOT EXISTS ventas (
     id SERIAL PRIMARY KEY,
     numero_venta VARCHAR(50) NOT NULL UNIQUE,
     cliente_id INT NOT NULL,
+    metodo_pago_id INT,
     fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     subtotal NUMERIC(12, 2) NOT NULL CHECK (subtotal >= 0),
     iva NUMERIC(12, 2) NOT NULL CHECK (iva >= 0),
     total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
     estado VARCHAR(20) NOT NULL DEFAULT 'Completada',
-    CONSTRAINT fk_ventas_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE RESTRICT
+    CONSTRAINT fk_ventas_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ventas_metodo_pago FOREIGN KEY (metodo_pago_id) REFERENCES metodos_pago(id) ON DELETE RESTRICT
 );
 
--- 11. Detalles de Venta (Renglones)
+-- 14. Detalles de Venta (Renglones / Partidas de Factura)
 CREATE TABLE IF NOT EXISTS detalles_venta (
     id SERIAL PRIMARY KEY,
     venta_id INT NOT NULL,
@@ -150,34 +211,211 @@ CREATE TABLE IF NOT EXISTS detalles_venta (
     CONSTRAINT fk_detalles_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
 );
 
--- Índices de Rendimiento para el Dominio Comercial
+-- 15. Despachos (Entregas y Logística en Obra)
+CREATE TABLE IF NOT EXISTS despachos (
+    id SERIAL PRIMARY KEY,
+    venta_id INT NOT NULL UNIQUE,
+    direccion_entrega VARCHAR(250) NOT NULL,
+    ciudad VARCHAR(100) NOT NULL,
+    contacto_recibe VARCHAR(100) NOT NULL,
+    telefono_contacto VARCHAR(30) NOT NULL,
+    fecha_estimada TIMESTAMPTZ NOT NULL,
+    fecha_entrega TIMESTAMPTZ,
+    costo_flete NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (costo_flete >= 0),
+    estado VARCHAR(30) NOT NULL DEFAULT 'Pendiente',
+    observaciones TEXT,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_despachos_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE
+);
+
+-- 16. Movimientos de Inventario (Kardex y Trazabilidad)
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+    id SERIAL PRIMARY KEY,
+    producto_id INT NOT NULL,
+    usuario_id TEXT,
+    tipo_movimiento VARCHAR(20) NOT NULL CHECK (tipo_movimiento IN ('Entrada', 'Salida', 'Ajuste')),
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    stock_previo INT NOT NULL CHECK (stock_previo >= 0),
+    stock_posterior INT NOT NULL CHECK (stock_posterior >= 0),
+    referencia VARCHAR(100),
+    motivo TEXT,
+    fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_movimientos_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_movimientos_usuario FOREIGN KEY (usuario_id) REFERENCES "AspNetUsers"("Id") ON DELETE SET NULL
+);
+
+-- 17. Vehículos (Flota de Transporte y Maquinaria de Construcción)
+CREATE TABLE IF NOT EXISTS vehiculos (
+    id SERIAL PRIMARY KEY,
+    placa VARCHAR(20) NOT NULL UNIQUE,
+    marca VARCHAR(50) NOT NULL,
+    modelo VARCHAR(50) NOT NULL,
+    tipo_vehiculo VARCHAR(50) NOT NULL,
+    capacidad_carga_ton NUMERIC(6, 2) CHECK (capacidad_carga_ton >= 0),
+    tarifa_diaria NUMERIC(12, 2) NOT NULL CHECK (tarifa_diaria >= 0),
+    estado VARCHAR(30) NOT NULL DEFAULT 'Disponible',
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 18. Alquileres (Contratos de Alquiler de Maquinaria y Vehículos a Clientes)
+CREATE TABLE IF NOT EXISTS alquileres (
+    id SERIAL PRIMARY KEY,
+    numero_contrato VARCHAR(50) NOT NULL UNIQUE,
+    cliente_id INT NOT NULL,
+    vehiculo_id INT NOT NULL,
+    fecha_inicio TIMESTAMPTZ NOT NULL,
+    fecha_fin TIMESTAMPTZ NOT NULL,
+    dias_alquiler INT NOT NULL CHECK (dias_alquiler > 0),
+    valor_diario NUMERIC(12, 2) NOT NULL CHECK (valor_diario >= 0),
+    total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+    estado VARCHAR(30) NOT NULL DEFAULT 'Activo',
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_alquileres_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_alquileres_vehiculo FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id) ON DELETE RESTRICT
+);
+
+-- =============================================================================
+-- MIGRACIÓN IDEMPOTENTE DE COLUMNAS PARA TABLAS EXISTENTES
+-- =============================================================================
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS user_id TEXT;
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS edad INT CHECK (edad >= 0);
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_clientes_usuario') THEN
+        ALTER TABLE clientes ADD CONSTRAINT fk_clientes_usuario FOREIGN KEY (user_id) REFERENCES "AspNetUsers"("Id") ON DELETE SET NULL;
+    END IF;
+END $$;
+
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria_id INT;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS proveedor_id INT;
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_productos_categoria') THEN
+        ALTER TABLE productos ADD CONSTRAINT fk_productos_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_productos_proveedor') THEN
+        ALTER TABLE productos ADD CONSTRAINT fk_productos_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+ALTER TABLE ventas ADD COLUMN IF NOT EXISTS metodo_pago_id INT;
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ventas_metodo_pago') THEN
+        ALTER TABLE ventas ADD CONSTRAINT fk_ventas_metodo_pago FOREIGN KEY (metodo_pago_id) REFERENCES metodos_pago(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
+
+-- =============================================================================
+-- ÍNDICES DE RENDIMIENTO (B-TREE) PARA EL DOMINIO COMERCIAL
+-- =============================================================================
+CREATE INDEX IF NOT EXISTS idx_categorias_nombre ON categorias(nombre);
+
+CREATE INDEX IF NOT EXISTS idx_proveedores_nit ON proveedores(nit);
+CREATE INDEX IF NOT EXISTS idx_proveedores_razon ON proveedores(razon_social);
+
+CREATE INDEX IF NOT EXISTS idx_metodos_pago_codigo ON metodos_pago(codigo);
+
 CREATE INDEX IF NOT EXISTS idx_clientes_identificacion ON clientes(identificacion);
 CREATE INDEX IF NOT EXISTS idx_clientes_email ON clientes(email);
+CREATE INDEX IF NOT EXISTS idx_clientes_user_id ON clientes(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo);
 CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos(nombre);
+CREATE INDEX IF NOT EXISTS idx_productos_categoria_id ON productos(categoria_id);
+CREATE INDEX IF NOT EXISTS idx_productos_proveedor_id ON productos(proveedor_id);
 
 CREATE INDEX IF NOT EXISTS idx_ventas_cliente_id ON ventas(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_metodo_pago_id ON ventas(metodo_pago_id);
 CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha);
 CREATE INDEX IF NOT EXISTS idx_ventas_numero ON ventas(numero_venta);
 
 CREATE INDEX IF NOT EXISTS idx_detalles_venta_venta_id ON detalles_venta(venta_id);
 CREATE INDEX IF NOT EXISTS idx_detalles_venta_producto_id ON detalles_venta(producto_id);
 
+CREATE INDEX IF NOT EXISTS idx_despachos_venta_id ON despachos(venta_id);
+CREATE INDEX IF NOT EXISTS idx_despachos_estado ON despachos(estado);
+
+CREATE INDEX IF NOT EXISTS idx_movimientos_producto_id ON movimientos_inventario(producto_id);
+CREATE INDEX IF NOT EXISTS idx_movimientos_fecha ON movimientos_inventario(fecha);
+
+CREATE INDEX IF NOT EXISTS idx_vehiculos_placa ON vehiculos(placa);
+CREATE INDEX IF NOT EXISTS idx_vehiculos_estado ON vehiculos(estado);
+
+CREATE INDEX IF NOT EXISTS idx_alquileres_cliente_id ON alquileres(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_alquileres_vehiculo_id ON alquileres(vehiculo_id);
+CREATE INDEX IF NOT EXISTS idx_alquileres_numero ON alquileres(numero_contrato);
+
 
 -- =============================================================================
--- PARTE 3: DATOS SEMILLA INICIALES (SEED DATA)
+-- PARTE 3: DATOS SEMILLA INICIALES BÁSICOS (SEED DATA)
 -- =============================================================================
 
-INSERT INTO clientes (identificacion, nombres, apellidos, email, telefono, direccion)
+INSERT INTO categorias (nombre, descripcion)
 VALUES 
-('1020304050', 'Carlos', 'Gómez', 'carlos.gomez@example.com', '3001234567', 'Calle 100 # 15-20'),
-('9876543210', 'Ana María', 'Rodríguez', 'ana.rodriguez@example.com', '3109876543', 'Carrera 45 # 68-12')
+-- Obra Gris, Estructuras y Materiales Básicos
+('Cementos y Agregados', 'Cementos grises, blancos, arenas, gravas y morteros listos para obra negra'),
+('Acero y Estructuras Metálicas', 'Varillas corrugadas, perfiles estructurales, mallas electrosoldadas y alambres'),
+('Mampostería y Drywall', 'Bloques arcilla no. 5, placas de yeso-cartón, perfiles galvanizados y masillas'),
+('Cubiertas, Techos y Fachadas', 'Tejas de fibrocemento, policarbonato, tejas de zinc, termoacústicas y canaletas'),
+('Madera y Formaletería', 'Listones, tablones, triplex fenólico y madera tratada para encofrados'),
+
+-- Instalaciones, Redes y Acabados Arquitectónicos
+('Tuberías y Conexiones PVC', 'Tuberías sanitarias, de ventilación, presión RDE y accesorios hidrosanitarios'),
+('Material Eléctrico e Iluminación', 'Cables conductores, tubería conduit, cajas de paso, breakers e iluminación LED'),
+('Pinturas y Acabados Arquitectónicos', 'Vinilos tipo 1 y 2, esmaltes sintéticos, estucos plásticos y selladores'),
+('Impermeabilizantes y Aditivos', 'Membranas asfálticas, aditivos acelerantes, impermeabilizantes acrílicos y siliconas'),
+('Plomería y Grifería', 'Grifos para baño y cocina, válvulas de corte, llaves de paso, sifones y grifería institucional'),
+('Pisos, Cerámicas y Revestimientos', 'Porcelanatos, baldosas, enchapes cerámicos, pegantes especializados y boquillas'),
+
+-- Ferretería Industrial, Fijaciones y Seguridad
+('Fijaciones, Tornillería y Anclajes', 'Tornillos drywall, pernos hexagonales, chazos metálicos, anclajes químicos y remaches'),
+('Herramientas Manuales', 'Llanas, palustres, flexómetros, niveles láser, martillos, cinceles y palas'),
+('Herramientas Eléctricas y Corte', 'Taladros percutores, pulidoras angulares, sierras circulares y demoledores profesionales'),
+('Seguridad Industrial y EPP', 'Cascos dieléctricos, arneses de altura, guantes de vaqueta, gafas y botas de seguridad'),
+('Cerrajería y Herrajes', 'Cerraduras para puertas de obra, candados de alta seguridad, bisagras y manijas de acero'),
+('Adhesivos, Siliconas y Selladores', 'Espuma de poliuretano expansiva, siliconas acéticas/neutras y pegantes de contacto'),
+
+-- Flota, Vehículos y Maquinaria de Construcción (Servicios y Alquiler US 4)
+('Maquinaria Pesada y Movimiento de Tierras', 'Retroexcavadoras de orugas, minicargadores con cuchara, volquetas sencillas y dobletroque de 14m3'),
+('Vehículos de Carga y Transporte', 'Camiones de estacas para fletes, camionetas 4x4 de reparto y vehículos utilitarios de logística'),
+('Equipos de Construcción y Maquinaria Menor', 'Mezcladoras de concreto (trompos), rodillos compactadores vibratorios, cortadoras de pavimento y torres de iluminación')
+ON CONFLICT (nombre) DO UPDATE SET descripcion = EXCLUDED.descripcion;
+
+INSERT INTO proveedores (nit, razon_social, contacto_nombre, telefono, email, direccion, ciudad)
+VALUES 
+('860002130-1', 'Cementos Argos S.A.', 'Carlos Restrepo', '3104567890', 'contacto@argos.co', 'Calle 7Sur # 42-70', 'Medellín'),
+('890900161-5', 'Gerdau Diaco S.A.', 'Mauricio Castro', '3156789012', 'ventas@gerdaudiaco.com', 'Carrera 48 # 26-85', 'Bogotá'),
+('860005228-4', 'Pavco Wavin Colombia', 'Lorena Pardo', '3112345678', 'servicio@pavco.com.co', 'Autopista Sur # 71-75', 'Bogotá'),
+('900123456-7', 'Distribuidora Ferretera del Valle S.A.S.', 'Javier Gómez', '3187654321', 'comercial@ferredelvalle.com', 'Calle 15 # 22-40', 'Cali')
+ON CONFLICT (nit) DO NOTHING;
+
+INSERT INTO metodos_pago (codigo, nombre, descripcion)
+VALUES 
+('EFECTIVO', 'Efectivo', 'Pago contra entrega o en caja física'),
+('TRANSFERENCIA', 'Transferencia Bancaria', 'Transferencia Bancolombia, Davivienda o PSE'),
+('TARJETA_CREDITO', 'Tarjeta de Crédito', 'Visa, Mastercard, American Express'),
+('CREDITO_COMERCIAL', 'Crédito Comercial a 30 Días', 'Línea de crédito para constructores aliados')
+ON CONFLICT (codigo) DO NOTHING;
+
+INSERT INTO clientes (identificacion, nombres, apellidos, email, telefono, direccion, edad)
+VALUES 
+('1020304050', 'Carlos', 'Gómez', 'carlos.gomez@example.com', '3001234567', 'Calle 100 # 15-20', 35),
+('9876543210', 'Ana María', 'Rodríguez', 'ana.rodriguez@example.com', '3109876543', 'Carrera 45 # 68-12', 28)
 ON CONFLICT (identificacion) DO NOTHING;
 
-INSERT INTO productos (codigo, nombre, descripcion, precio, stock)
+INSERT INTO productos (codigo, nombre, descripcion, precio, stock, categoria_id, proveedor_id)
 VALUES 
-('PROD-001', 'Tornillo de Acero 2 pulg', 'Tornillo galvanizado de alta resistencia por caja', 15000.00, 100),
-('PROD-002', 'Cemento Gris Tipo 1 (50kg)', 'Saco de cemento gris para construcción', 32000.00, 50),
-('PROD-003', 'Pintura Blanca Tipo 1 (Galón)', 'Pintura acrílica lavable para interiores', 65000.00, 30)
+('PROD-001', 'Tornillo de Acero 2 pulg', 'Tornillo galvanizado de alta resistencia por caja', 15000.00, 100, 2, 2),
+('PROD-002', 'Cemento Gris Tipo 1 (50kg)', 'Saco de cemento gris para construcción', 32000.00, 50, 1, 1),
+('PROD-003', 'Pintura Blanca Tipo 1 (Galón)', 'Pintura acrílica lavable para interiores', 65000.00, 30, 4, 4)
 ON CONFLICT (codigo) DO NOTHING;
+
+INSERT INTO vehiculos (placa, marca, modelo, tipo_vehiculo, capacidad_carga_ton, tarifa_diaria, estado)
+VALUES
+('FIR-101', 'Hino', 'Dutro 300', 'Camión Estacas', 4.5, 250000.00, 'Disponible'),
+('FIR-202', 'Chevrolet', 'NKR 512', 'Volqueta Liviana', 5.0, 320000.00, 'Disponible'),
+('FIR-303', 'Caterpillar', 'Mixer 2024', 'Mezcladora de Concreto 2 Bultos', 1.0, 120000.00, 'Disponible'),
+('FIR-404', 'Nissan', 'Frontier 4x4', 'Camioneta de Reparto', 1.2, 180000.00, 'Disponible')
+ON CONFLICT (placa) DO NOTHING;

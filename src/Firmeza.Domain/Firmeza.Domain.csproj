@@ -1,5 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!--
+    =============================================================================
+    PROYECTO: Firmeza.Domain
+    CAPA: Dominio (Núcleo de Clean Architecture)
+    
+    PROPOSITO:
+      Contiene las entidades fundamentales del negocio (Cliente, Producto, Venta, DetalleVenta).
+      Esta capa NO depende de ninguna otra capa ni de paquetes de infraestructura o base de datos.
+      
+    ORIGEN DE LOS DATOS:
+      Define la estructura canónica en memoria que se corresponde 1 a 1 con las tablas 
+      de la base de datos PostgreSQL ('clientes', 'productos', 'ventas', 'detalles_venta').
+      
+    AUDITORÍA DE DEPENDENCIAS:
+      - 0 dependencias externas: Mantiene el dominio puro sin acoplamiento a terceros.
+    =============================================================================
+    -->
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>

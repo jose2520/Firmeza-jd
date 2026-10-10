@@ -1,5 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!--
+    =============================================================================
+    PROYECTO: Firmeza.Infrastructure
+    CAPA: Infraestructura (Acceso a Datos y Servicios Externos)
+    
+    PROPOSITO:
+      Implementa el acceso a la base de datos PostgreSQL mediante Entity Framework Core,
+      así como servicios de infraestructura como generación de reportes Excel (EPPlus),
+      generación de documentos PDF (iText 7/9), y emisión de tokens de seguridad JWT.
+      
+    ORIGEN DE LOS DATOS:
+      - Motor PostgreSQL local o remoto ('firmeza_db'): Lee y escribe mediante ApplicationDbContext.
+      - Archivo de configuración 'appsettings.json': Obtiene cadenas de conexión y llaves JWT.
+      - Flujos en memoria (MemoryStream): Generación de documentos binarios (PDF y XLSX).
+      
+    AUDITORÍA DE DEPENDENCIAS Y PAQUETES:
+      - EPPlus (8.7.1): Exportación de reportes de ventas e importación masiva de productos desde Excel.
+      - itext7 (9.7.0): Generación de facturas comerciales de venta en formato PDF.
+      - Microsoft.AspNetCore.Identity.EntityFrameworkCore: Gestión de tablas de usuarios y roles en PostgreSQL.
+      - Microsoft.EntityFrameworkCore.Tools: Herramientas de consola para migraciones.
+      - Npgsql.EntityFrameworkCore.PostgreSQL: Proveedor oficial de conexión a PostgreSQL.
+      - System.IdentityModel.Tokens.Jwt: Creación, firma y codificación de tokens Bearer JWT.
+      - Microsoft.Extensions.Configuration/DependencyInjection: Integración con el contenedor y appsettings.
+    =============================================================================
+    -->
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -7,19 +33,33 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Referencias a capas internas -->
         <ProjectReference Include="..\Firmeza.Domain\Firmeza.Domain.csproj" />
         <ProjectReference Include="..\Firmeza.Application\Firmeza.Application.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Generación y procesamiento de hojas de cálculo Excel (.xlsx) -->
+        <PackageReference Include="EPPlus" Version="8.7.1" />
+
+        <!-- Generación de documentos PDF de facturación -->
+        <PackageReference Include="itext7" Version="9.7.0" />
+
+        <!-- Seguridad e Identity con Entity Framework Core -->
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+
+        <!-- Inyección de dependencias y configuración (appsettings.json) -->
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
+
+        <!-- Conector y ORM para base de datos PostgreSQL -->
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+
+        <!-- Generación y verificación de tokens de seguridad JWT -->
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     </ItemGroup>
 

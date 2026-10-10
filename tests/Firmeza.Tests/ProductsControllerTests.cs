@@ -2,6 +2,7 @@ using Firmeza.API.Controllers;
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -10,12 +11,14 @@ namespace Firmeza.Tests;
 public class ProductsControllerTests
 {
     private readonly Mock<IProductoService> _productoServiceMock;
+    private readonly Mock<IExcelService> _excelServiceMock;
     private readonly ProductsController _controller;
 
     public ProductsControllerTests()
     {
         _productoServiceMock = new Mock<IProductoService>();
-        _controller = new ProductsController(_productoServiceMock.Object);
+        _excelServiceMock = new Mock<IExcelService>();
+        _controller = new ProductsController(_productoServiceMock.Object, _excelServiceMock.Object);
     }
 
     [Fact]
@@ -69,5 +72,38 @@ public class ProductsControllerTests
         var notFoundResult = result.Result as NotFoundObjectResult;
         notFoundResult.Should().NotBeNull();
         notFoundResult!.StatusCode.Should().Be(404);
+    }
+
+    [Fact]
+    public async Task ExportExcel_ShouldReturnFileContent()
+    {
+        // Arrange
+        var dummyBytes = new byte[] { 1, 2, 3, 4 };
+        _excelServiceMock.Setup(e => e.ExportProductsToExcelAsync()).ReturnsAsync(dummyBytes);
+
+        // Act
+        var result = await _controller.ExportExcel();
+
+        // Assert
+        var fileResult = result as FileContentResult;
+        fileResult.Should().NotBeNull();
+        fileResult!.ContentType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        fileResult.FileContents.Should().BeEquivalentTo(dummyBytes);
+    }
+
+    [Fact]
+    public void DownloadTemplate_ShouldReturnTemplateFile()
+    {
+        // Arrange
+        var dummyBytes = new byte[] { 5, 6, 7, 8 };
+        _excelServiceMock.Setup(e => e.GenerateProductsTemplate()).Returns(dummyBytes);
+
+        // Act
+        var result = _controller.DownloadTemplate();
+
+        // Assert
+        var fileResult = result as FileContentResult;
+        fileResult.Should().NotBeNull();
+        fileResult!.FileContents.Should().BeEquivalentTo(dummyBytes);
     }
 }

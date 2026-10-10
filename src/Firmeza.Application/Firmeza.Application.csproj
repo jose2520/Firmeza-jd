@@ -1,5 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!--
+    =============================================================================
+    PROYECTO: Firmeza.Application
+    CAPA: Aplicación (Casos de Uso e Interfaces)
+    
+    PROPOSITO:
+      Define los contratos (interfaces de servicio) y los Objetos de Transferencia de Datos (DTOs)
+      que modelan los casos de uso del negocio (ventas, catálogo de productos, clientes,
+      reportes en Excel, facturación en PDF, autenticación y dashboard).
+      
+    ORIGEN DE LOS DATOS:
+      Los DTOs reciben datos deserializados desde el cuerpo o parámetros de las peticiones HTTP
+      y proyectan entidades traídas de la base de datos hacia la capa de presentación (API).
+      
+    AUDITORÍA DE DEPENDENCIAS:
+      - Firmeza.Domain: Necesario para tipar y asociar entidades a nivel de interfaces de repositorio/servicio.
+      - Microsoft.Extensions.DependencyInjection.Abstractions: Permite registrar servicios en IServiceCollection.
+      - Sin paquetes basura o no utilizados.
+    =============================================================================
+    -->
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -7,10 +28,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Referencia al dominio del negocio -->
         <ProjectReference Include="..\Firmeza.Domain\Firmeza.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Abstracciones para inyección de dependencias (IServiceCollection) -->
+        <PackageReference Include="AutoMapper" Version="16.2.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
     </ItemGroup>
 

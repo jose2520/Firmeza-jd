@@ -1,6 +1,130 @@
 @Firmeza.API_HostAddress = http://localhost:5125
 
-GET {{Firmeza.API_HostAddress}}/weatherforecast/
+### 0. Healthcheck / Bienvenida
+GET {{Firmeza.API_HostAddress}}/
 Accept: application/json
 
-###
+### 1. Autenticación: Iniciar Sesión (Admin)
+# @name loginAdmin
+POST {{Firmeza.API_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "emailOrUsername": "admin",
+  "password": "Admin123*"
+}
+
+### Guardar Token JWT de la respuesta anterior
+@authToken = {{loginAdmin.response.body.token}}
+
+### 2. Autenticación: Registro de Nuevo Usuario (Rol Cliente por defecto)
+POST {{Firmeza.API_HostAddress}}/api/Auth/register
+Content-Type: application/json
+
+{
+  "username": "cliente_nuevo",
+  "email": "cliente.nuevo@gmail.com",
+  "password": "Password123*"
+}
+
+### 3. Dashboard: Resumen de Métricas Comerciales
+GET {{Firmeza.API_HostAddress}}/api/Dashboard/summary
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 4. Catálogo de Productos: Listar todos los productos
+GET {{Firmeza.API_HostAddress}}/api/Products
+Accept: application/json
+
+### 5. Catálogo de Productos: Consultar por ID
+GET {{Firmeza.API_HostAddress}}/api/Products/1
+Accept: application/json
+
+### 6. Catálogo de Productos: Crear nuevo producto (Requiere Admin)
+POST {{Firmeza.API_HostAddress}}/api/Products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "codigo": "PROD-200",
+  "nombre": "Nivel de Mano Tubular 24 pulg",
+  "descripcion": "Nivel magnético de aluminio de alta precisión",
+  "precio": 45000.00,
+  "stock": 35
+}
+
+### 7. Catálogo de Productos: Descargar Plantilla Excel para Carga Masiva
+GET {{Firmeza.API_HostAddress}}/api/Products/template-excel
+Authorization: Bearer {{authToken}}
+
+### 8. Catálogo de Productos: Exportar Catálogo a Excel (.xlsx)
+GET {{Firmeza.API_HostAddress}}/api/Products/export-excel
+Authorization: Bearer {{authToken}}
+
+### 9. Gestión de Clientes: Listar todos los clientes
+GET {{Firmeza.API_HostAddress}}/api/Clients
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 10. Gestión de Clientes: Crear nuevo cliente
+POST {{Firmeza.API_HostAddress}}/api/Clients
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "identificacion": "1198765432",
+  "nombres": "Esteban",
+  "apellidos": "Morales Ruiz",
+  "email": "esteban.morales@example.com",
+  "telefono": "3104567890",
+  "direccion": "Calle 45 # 23-10"
+}
+
+### 11. Gestión de Ventas: Listar historial de ventas
+GET {{Firmeza.API_HostAddress}}/api/Sales
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 12. Gestión de Ventas: Consultar venta por ID
+GET {{Firmeza.API_HostAddress}}/api/Sales/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 13. Gestión de Ventas: Generar y Descargar Factura de Venta en PDF
+GET {{Firmeza.API_HostAddress}}/api/Sales/1/pdf
+Authorization: Bearer {{authToken}}
+
+### 14. Gestión de Ventas: Exportar Histórico de Ventas a Excel (.xlsx)
+GET {{Firmeza.API_HostAddress}}/api/Sales/export-excel
+Authorization: Bearer {{authToken}}
+
+### 15. Gestión de Ventas: Registrar nueva venta (Cálculo automático de IVA 19% y descuento de Stock)
+POST {{Firmeza.API_HostAddress}}/api/Sales
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "clienteId": 1,
+  "detalles": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    },
+    {
+      "productoId": 2,
+      "cantidad": 1
+    }
+  ]
+}
+
+### 16. Gestión de Ventas: Anular venta y reincorporar stock al inventario
+PUT {{Firmeza.API_HostAddress}}/api/Sales/11/cancel
+Authorization: Bearer {{authToken}}
+
+### 17. Administración de Usuarios: Consultar usuarios de Identity
+GET {{Firmeza.API_HostAddress}}/api/Users
+Authorization: Bearer {{authToken}}
+
+### 18. Administración de Usuarios: Consultar roles del sistema
+GET {{Firmeza.API_HostAddress}}/api/Users/roles
+Authorization: Bearer {{authToken}}
