@@ -147,7 +147,7 @@ Firmeza/
 
 ---
 
-## 📂 Mapa Detallado de Responsabilidades y Arquitectura (Guía de Analogías de Obra y Precisión Técnica)
+## 📂 Mapa Detallado de Responsabilidades y Arquitectura: Cada Carpeta y Archivo Explicado
 
 > 💡 **Metáfora Rectora de la Solución:**  
 > Imagina la plataforma **Firmeza** como una **Megaempresa Constructora y Distribuidora Ferretera Industrial**.  
@@ -176,85 +176,171 @@ src/Firmeza.Domain/
 ├── Errors/               # 🚨 El Catálogo de Alertas y Códigos de Falla Estructurados
 ├── Events/               # 📻 El Sistema de Radioteléfonos y Sirenas de la Obra (Eventos de Dominio)
 ├── Exceptions/           # 🛑 Los Frenos de Emergencia Automáticos (Excepciones de Dominio)
-└── ValueObjects/         # 📐 Los Instrumentos de Medición Calibrados con Láser (Inmutables)
+├── ValueObjects/         # 📐 Los Instrumentos de Medición Calibrados con Láser (Inmutables)
+└── Firmeza.Domain.csproj # 📄 La Declaración de Pureza del Proyecto (.NET 10 sin dependencias)
 ```
 
-#### 📁 `Common/` (Las Primitivas y Moldes Fundamentales de DDD)
-* *Analogía:* Las varillas de acero estructural y las formaletas de fundición estándar que se reutilizan en toda la obra.
-* [`ValueObject.cs`](src/Firmeza.Domain/Common/ValueObject.cs): *El molde de fundición idéntico*. Clase base abstracta. Establece que dos objetos no se diferencian por un número de ID ficticio, sino por sus valores intrínsecos. Implementa igualdad profunda por componentes (`GetEqualityComponents()`) y sobrecarga los operadores `==` y `!=` para prevenir comparaciones erróneas por referencia de memoria.
-* [`AggregateRoot.cs`](src/Firmeza.Domain/Common/AggregateRoot.cs): *El contenedor marítimo sellado con radio transmisor incorporado*. Clase base para las entidades líderes de un conjunto comercial (ej. `Venta`, `Producto`, `Alquiler`). Mantiene una cola interna protegida de eventos de dominio (`_domainEvents`) mediante `AddDomainEvent()` y `ClearDomainEvents()`, garantizando que cualquier cambio de estado crítico pueda comunicarse al exterior de forma desacoplada.
-* [`IDomainEvent.cs`](src/Firmeza.Domain/Common/IDomainEvent.cs): *La señal radial de aviso con marca de tiempo*. Interfaz marcadora que exige a todo evento portar una marca temporal inmutable en tiempo universal coordinado (`OccurredOn = DateTime.UtcNow`).
+#### 📁 `Abstractions/` (Contratos Notariales y Especificaciones Técnicas - Puertos)
+* *Analogía General:* Los pliegos de licitación y contratos notariales estándar. Definen con exactitud qué obligaciones debe cumplir cualquier contratista externo sin amarrarse a ninguna empresa en particular.
+* [`IUnitOfWork.cs`](src/Firmeza.Domain/Abstractions/IUnitOfWork.cs):
+  * 💡 *Analogía:* El protocolo de apertura y cierre de la caja fuerte bancaria.
+  * 🎯 *Responsabilidad:* Contrato para transacciones atómicas ACID. Define `SaveChangesAsync()`, `BeginTransactionAsync()`, `CommitTransactionAsync()` y `RollbackTransactionAsync()`.
+  * ⚙️ *Invariante:* Garantiza que jamás se registre un cobro sin descontar el stock o viceversa.
+* [`IRepository.cs`](src/Firmeza.Domain/Abstractions/IRepository.cs):
+  * 💡 *Analogía:* El manual de funciones básicas del bodeguero general.
+  * 🎯 *Responsabilidad:* Interfaz genérica `IRepository<T>` con operaciones CRUD estándar (`GetByIdAsync`, `GetAllAsync`, `FindAsync`, `AddAsync`, `Update`, `Remove`, `ExistsAsync`).
+  * ⚙️ *Invariante:* Desacopla las consultas de dominio de cualquier motor de base de datos relacional o NoSQL.
+* [`IClienteRepository.cs`](src/Firmeza.Domain/Abstractions/IClienteRepository.cs):
+  * 💡 *Analogía:* El libro índice del fichero de constructores y clientes.
+  * 🎯 *Responsabilidad:* Búsqueda por documento de identificación único, correo electrónico y validación de unicidad en cartera.
+* [`IProductoRepository.cs`](src/Firmeza.Domain/Abstractions/IProductoRepository.cs):
+  * 💡 *Analogía:* El catálogo de inventario del jefe de pasillo.
+  * 🎯 *Responsabilidad:* Consultas de artículos por código SKU, filtrado por categoría y reporte de productos con stock bajo (`GetLowStockAsync`).
+* [`IVentaRepository.cs`](src/Firmeza.Domain/Abstractions/IVentaRepository.cs):
+  * 💡 *Analogía:* El libro fiscal de ventas de la caja central.
+  * 🎯 *Responsabilidad:* Consulta de facturas con sus renglones incluidos, filtrado por cliente, rangos de fechas y estado comercial.
+* [`IVehiculoRepository.cs`](src/Firmeza.Domain/Abstractions/IVehiculoRepository.cs):
+  * 💡 *Analogía:* La bitácora de guardia del patio de maquinaria pesada.
+  * 🎯 *Responsabilidad:* Búsqueda de vehículos por placa, disponibilidad inmediata para alquiler y tipología de maquinaria.
+* [`IAlquilerRepository.cs`](src/Firmeza.Domain/Abstractions/IAlquilerRepository.cs):
+  * 💡 *Analogía:* El archivador de contratos de arrendamiento de equipo.
+  * 🎯 *Responsabilidad:* Consulta de contratos vigentes por cliente o máquina, permitiendo controlar qué unidades están en obra.
+* [`IDespachoRepository.cs`](src/Firmeza.Domain/Abstractions/IDespachoRepository.cs):
+  * 💡 *Analogía:* La planilla de despacho y fletes del jefe de transporte.
+  * 🎯 *Responsabilidad:* Trazabilidad de envíos a pie de obra por venta asociada, estado del flete y fechas estimadas.
+* [`IMovimientoInventarioRepository.cs`](src/Firmeza.Domain/Abstractions/IMovimientoInventarioRepository.cs):
+  * 💡 *Analogía:* El tarjetero Kardex de auditoría física.
+  * 🎯 *Responsabilidad:* Historial cronológico inmutable de entradas, salidas y ajustes de almacén por producto o usuario.
+* [`ICategoriaRepository.cs`](src/Firmeza.Domain/Abstractions/ICategoriaRepository.cs):
+  * 💡 *Analogía:* El índice de pasillos y familias de productos.
+  * 🎯 *Responsabilidad:* Consulta y gestión de las 20 líneas de catálogo, conteo de artículos vinculados y filtros por activación.
+* [`IProveedorRepository.cs`](src/Firmeza.Domain/Abstractions/IProveedorRepository.cs):
+  * 💡 *Analogía:* El directorio de convenios con fábricas y distribuidores.
+  * 🎯 *Responsabilidad:* Búsqueda de proveedores aliados por NIT y validación de unicidad fiscal.
+* [`IDomainEventDispatcher.cs`](src/Firmeza.Domain/Abstractions/IDomainEventDispatcher.cs):
+  * 💡 *Analogía:* La antena repetidora central que amplifica las alertas de radio.
+  * 🎯 *Responsabilidad:* Contrato para despachar asíncronamente colecciones de eventos de dominio hacia sus respectivos manejadores.
+* [`IDomainEventHandler.cs`](src/Firmeza.Domain/Abstractions/IDomainEventHandler.cs):
+  * 💡 *Analogía:* La cuadrilla especializada que atiende una llamada radial específica.
+  * 🎯 *Responsabilidad:* Contrato genérico `IDomainEventHandler<TEvent>` que implementa la lógica de respuesta ante un evento (`HandleAsync`).
+* [`IDateTimeProvider.cs`](src/Firmeza.Domain/Abstractions/IDateTimeProvider.cs):
+  * 💡 *Analogía:* El reloj atómico oficial colgado en la torre central.
+  * 🎯 *Responsabilidad:* Abstrae `DateTime.UtcNow`, `Now` y `Today` para permitir pruebas unitarias deterministas sin depender del reloj del sistema operativo.
+* [`ISpecification.cs`](src/Firmeza.Domain/Abstractions/ISpecification.cs):
+  * 💡 *Analogía:* El tamiz o zaranda de clasificación de materiales.
+  * 🎯 *Responsabilidad:* Patrón Specification que encapsula expresiones booleanas reutilizables (`IsSatisfiedBy`) para reglas de consulta.
 
-#### 📁 `ValueObjects/` (Instrumentos de Medición de Precisión Calibrados)
-* *Analogía:* Los calibradores de precisión Vernier, balanzas electrónicas de laboratorio y medidores láser. Si una medida o formato no cumple la norma exacta, el instrumento emite un sonido y se niega a registrar la lectura.
-* [`Dinero.cs`](src/Firmeza.Domain/ValueObjects/Dinero.cs): *La balanza de precisión de tesorería*. Encapsula importe financiero en formato `decimal` y moneda (`COP`). Impide que existan valores negativos mediante `ValorInvalidoException`, implementa redondeo contable bancario (a 2 decimales) y sobrecarga operadores aritméticos (`+`, `-`, `*`) para erradicar cualquier error de precisión o números flotantes fantasma.
-* [`CodigoSku.cs`](src/Firmeza.Domain/ValueObjects/CodigoSku.cs): *El código troquelado en la viga de acero*. Normaliza el identificador de bodega a mayúsculas, elimina espacios periféricos y valida que el código no sea nulo ni exceda los límites de longitud (ej. `PROD-001`), evitando que existan códigos de almacén en blanco o desordenados.
-* [`Placa.cs`](src/Firmeza.Domain/ValueObjects/Placa.cs): *La placa metálica oficial del Ministerio de Transporte*. Exige el estándar vehicular colombiano de tres letras, guion opcional y tres dígitos (o dos dígitos y una letra para motocicletas/remolques, ej. `WXC-456`), normalizándola automáticamente a mayúsculas.
-* [`Nit.cs`](src/Firmeza.Domain/ValueObjects/Nit.cs): *El sello tributario de la DIAN*. Valida la estructura alfanumérica del Número de Identificación Tributaria o Cédula de Ciudadanía con su respectivo dígito de verificación, impidiendo registrar empresas con identificaciones fiscales inválidas.
-* [`Email.cs`](src/Firmeza.Domain/ValueObjects/Email.cs): *La dirección postal con buzón homologado*. Aplica validación sintáctica de expresiones regulares RFC 5322 y normaliza automáticamente la dirección a minúsculas para comparaciones y búsquedas uniformes.
-* [`Telefono.cs`](src/Firmeza.Domain/ValueObjects/Telefono.cs): *La línea telefónica directa validada por conmutador*. Depura caracteres especiales y restringe la longitud a un rango numérico estricto de 7 a 15 dígitos.
+#### 📁 `Common/` (Ladrillos Maestros y Moldes Estructurales)
+* *Analogía General:* Las varillas de acero corrugado y los moldes de formaleta estándar reutilizados en toda la obra.
+* [`ValueObject.cs`](src/Firmeza.Domain/Common/ValueObject.cs):
+  * 💡 *Analogía:* El molde de fundición idéntico. Dos ladrillos son iguales porque miden y pesan exactamente lo mismo, no por un número de cédula.
+  * 🎯 *Responsabilidad:* Clase base abstracta con comparación estructural profunda mediante `GetEqualityComponents()` y sobrecarga de operadores `==` y `!=`.
+* [`AggregateRoot.cs`](src/Firmeza.Domain/Common/AggregateRoot.cs):
+  * 💡 *Analogía:* El contenedor marítimo sellado con radio transmisor incorporado.
+  * 🎯 *Responsabilidad:* Clase base para entidades líderes de agregados. Custodia la lista interna de eventos de dominio (`_domainEvents`), permitiendo agregarlos (`AddDomainEvent()`) y vaciarlos tras su despacho (`ClearDomainEvents()`).
+* [`IDomainEvent.cs`](src/Firmeza.Domain/Common/IDomainEvent.cs):
+  * 💡 *Analogía:* La señal radial de aviso con sello de hora UTC.
+  * 🎯 *Responsabilidad:* Interfaz marcadora para eventos de dominio, exigiendo la propiedad inmutable `OccurredOn`.
 
-#### 📁 `Entities/` (Los Bienes Físicos, Actores Comerciales y Contratos Notariados)
-* *Analogía:* Los activos de la constructora que tienen cédula o número de serie propio, cambian de estado con el tiempo y tienen un ciclo de vida duradero.
-* [`Producto.cs`](src/Firmeza.Domain/Entities/Producto.cs): *El material físico en estantería con sensor de stock*. Agregado raíz. Protege su inventario de forma atómica: los métodos `DescontarStock(int cantidad)` e `IncrementarStock(int cantidad)` bloquean transacciones que intenten dejar el stock en negativo arrojando `StockInsuficienteException`. Dispara `StockBajoDomainEvent` cuando las existencias tocan el umbral de alerta (<= 10 unidades) y gestiona la desactivación lógica (`Desactivar()`).
-* [`Venta.cs`](src/Firmeza.Domain/Entities/Venta.cs): *La factura comercial oficial de caja registradora*. Agregado raíz. Encapsula cliente, medio de pago, lista de renglones (`DetalleVenta`), calcula automáticamente el impuesto del IVA (19%) sobre el subtotal, totaliza la transacción y gestiona estados (`Completada`, `Anulada`). Al cancelarse mediante `Cancelar()`, emite `VentaCanceladaDomainEvent` para restituir el inventario.
-* [`DetalleVenta.cs`](src/Firmeza.Domain/Entities/DetalleVenta.cs): *El renglón individual impreso en la factura*. Asocia el producto con la cantidad comprada y congela el precio unitario en el instante de la transacción, impidiendo que variaciones futuras de catálogo alteren la contabilidad pasada.
-* [`Alquiler.cs`](src/Firmeza.Domain/Entities/Alquiler.cs): *El contrato formal de arrendamiento de maquinaria pesada*. Agregado raíz. Asocia cliente con maquinaria por un rango de fechas (`FechaInicio`, `FechaFin`), calcula automáticamente la duración en días y el costo total a partir de la tarifa diaria del equipo, transita estados (`Activo`, `Finalizado`, `Cancelado`) y emite `VehiculoLiberadoDomainEvent` al terminar el contrato.
-* [`Vehiculo.cs`](src/Firmeza.Domain/Entities/Vehiculo.cs): *El camión o maquinaria con motor en el patio automotor*. Modela placa, marca, modelo, capacidad de carga en toneladas métricas, tarifa diaria de arrendamiento y disponibilidad (`Disponible`, `Alquilado`, `EnMantenimiento`).
-* [`Despacho.cs`](src/Firmeza.Domain/Entities/Despacho.cs): *La remisión de transporte y guía de entrega a pie de obra*. Asocia una venta a una dirección de entrega, ciudad de destino, contacto receptor, costo de flete y ciclo logístico (`Pendiente`, `EnRuta`, `Entregado`, `Cancelado`).
-* [`MovimientoInventario.cs`](src/Firmeza.Domain/Entities/MovimientoInventario.cs): *La ficha Kardex inmutable archivada por el bodeguero*. Documenta cada alteración del stock con su tipo (`Entrada`, `Salida`, `Ajuste`), cantidad afectada, stock previo, stock posterior, usuario responsable y justificación operativa.
-* [`Cliente.cs`](src/Firmeza.Domain/Entities/Cliente.cs): *El expediente de cliente en la cartera comercial*. Custodia identificación única, nombres, apellidos, correo, teléfono, fecha de nacimiento con cálculo computado dinámico de `Edad` y vinculación opcional (`user_id`) con el usuario autenticado de Identity.
-* [`Categoria.cs`](src/Firmeza.Domain/Entities/Categoria.cs): *El letrero colgante que identifica el pasillo de la tienda*. Agrupa los productos en las 20 líneas técnicas comerciales (Materiales, Acabados, Ferretería, Maquinaria pesada).
-* [`Proveedor.cs`](src/Firmeza.Domain/Entities/Proveedor.cs): *El convenio marco con el fabricante mayorista*. Registra datos de contacto y NIT de aliados estratégicos como Cementos Argos, Gerdau Diaco o Pavco Wavin.
-* [`MetodoPago.cs`](src/Firmeza.Domain/Entities/MetodoPago.cs): *La caja o canal de recaudo autorizado*. Efectivo en mostrador, Transferencia Bancaria (PSE), Tarjeta Débito/Crédito y Crédito Comercial a 30 días para firmas constructoras.
+#### 📁 `ValueObjects/` (Instrumentos de Medición Calibrados con Láser)
+* *Analogía General:* Las balanzas electrónicas calibradas y los calibradores Vernier de laboratorio. No permiten lecturas inválidas.
+* [`Dinero.cs`](src/Firmeza.Domain/ValueObjects/Dinero.cs):
+  * 💡 *Analogía:* La balanza de oro de tesorería.
+  * 🎯 *Responsabilidad:* Encapsula importe (`decimal`) y moneda (`COP`). Impide valores negativos arrojando `ValorInvalidoException`, realiza redondeo bancario exacto (2 decimales) y sobrecarga operadores aritméticos (`+`, `-`, `*`).
+* [`CodigoSku.cs`](src/Firmeza.Domain/ValueObjects/CodigoSku.cs):
+  * 💡 *Analogía:* El código troquelado en la viga de acero.
+  * 🎯 *Responsabilidad:* Normaliza códigos de artículo a mayúsculas, elimina espacios y valida formato estricto (ej. `PROD-001`), evitando códigos vacíos o corruptos.
+* [`Placa.cs`](src/Firmeza.Domain/ValueObjects/Placa.cs):
+  * 💡 *Analogía:* La matrícula metálica oficial expedida por el Ministerio de Transporte.
+  * 🎯 *Responsabilidad:* Valida el formato vehicular colombiano (3 letras, guion opcional y 3 números para camiones/volquetas, ej. `WXC-456`), normalizándola en mayúsculas.
+* [`Nit.cs`](src/Firmeza.Domain/ValueObjects/Nit.cs):
+  * 💡 *Analogía:* El sello tributario oficial de la DIAN.
+  * 🎯 *Responsabilidad:* Valida la estructura de Cédula o NIT y su dígito de verificación, impidiendo facturar a entidades ficticias.
+* [`Email.cs`](src/Firmeza.Domain/ValueObjects/Email.cs):
+  * 💡 *Analogía:* El buzón postal homologado.
+  * 🎯 *Responsabilidad:* Valida sintaxis RFC 5322 y normaliza la dirección a minúsculas para búsquedas deterministas.
+* [`Telefono.cs`](src/Firmeza.Domain/ValueObjects/Telefono.cs):
+  * 💡 *Analogía:* La línea telefónica directa conmutada.
+  * 🎯 *Responsabilidad:* Valida longitud numérica estricta entre 7 y 15 dígitos sin caracteres no numéricos.
 
-#### 📁 `Enums/` (El Semáforo, Balizas y Señales Oficiales de Tránsito en la Obra)
-* *Analogía:* Las luces de baliza, los colores de los cascos de protección y las señales de tránsito pintadas en las vías de la obra para evitar confusiones humanas.
+#### 📁 `Entities/` (Bienes Físicos, Actores Comerciales y Contratos Notariados)
+* *Analogía General:* Los activos con número de placa o serie propio, que cambian de estado con el tiempo y tienen ciclo de vida duradero.
+* [`Producto.cs`](src/Firmeza.Domain/Entities/Producto.cs):
+  * 💡 *Analogía:* El material físico en estantería con sensor de stock.
+  * 🎯 *Responsabilidad:* Agregado raíz. Administra precio, descripción, SKU, categoría y proveedor. Controla el stock de forma atómica: `DescontarStock()` e `IncrementarStock()` impiden inventarios negativos lanzando `StockInsuficienteException`. Dispara `StockBajoDomainEvent` cuando las existencias tocan el umbral crítico (<= 10 unidades) y gestiona desactivación lógica (`Desactivar()`).
+* [`Venta.cs`](src/Firmeza.Domain/Entities/Venta.cs):
+  * 💡 *Analogía:* La factura comercial oficial de caja registradora.
+  * 🎯 *Responsabilidad:* Agregado raíz. Encapsula cliente, medio de pago, calcula automáticamente el IVA del 19% sobre el subtotal, totaliza renglones (`DetalleVenta`) y gestiona estados (`Completada`, `Anulada`). Al anularse vía `Cancelar()`, emite `VentaCanceladaDomainEvent` para reponer el stock.
+* [`DetalleVenta.cs`](src/Firmeza.Domain/Entities/DetalleVenta.cs):
+  * 💡 *Analogía:* El renglón individual impreso en el papel de la factura.
+  * 🎯 *Responsabilidad:* Asocia producto, cantidad adquirida y precio unitario congelado en el instante de la transacción para proteger la contabilidad histórica.
+* [`Alquiler.cs`](src/Firmeza.Domain/Entities/Alquiler.cs):
+  * 💡 *Analogía:* El contrato formal de arrendamiento de maquinaria pesada.
+  * 🎯 *Responsabilidad:* Agregado raíz. Vincula cliente con máquina por un rango de fechas (`FechaInicio`, `FechaFin`), calcula duración en días y valor total según la tarifa diaria, gestiona estados (`Activo`, `Finalizado`, `Cancelado`) y emite `VehiculoLiberadoDomainEvent` al terminar.
+* [`Vehiculo.cs`](src/Firmeza.Domain/Entities/Vehiculo.cs):
+  * 💡 *Analogía:* El camión o máquina en el parque automotor.
+  * 🎯 *Responsabilidad:* Modela placa, marca, modelo, capacidad en toneladas métricas, tarifa diaria de alquiler y estado operativo (`Disponible`, `Alquilado`, `EnMantenimiento`).
+* [`Despacho.cs`](src/Firmeza.Domain/Entities/Despacho.cs):
+  * 💡 *Analogía:* La guía de transporte y remisión de carga en volqueta.
+  * 🎯 *Responsabilidad:* Asocia una venta a una dirección de entrega en obra, ciudad, contacto en sitio, costo de flete y ciclo logístico (`Pendiente`, `EnRuta`, `Entregado`, `Cancelado`).
+* [`MovimientoInventario.cs`](src/Firmeza.Domain/Entities/MovimientoInventario.cs):
+  * 💡 *Analogía:* La tarjeta Kardex física colgada en el anaquel.
+  * 🎯 *Responsabilidad:* Registro inmutable de cada entrada, salida o ajuste, con usuario responsable, motivo, stock previo y stock posterior.
+* [`Cliente.cs`](src/Firmeza.Domain/Entities/Cliente.cs):
+  * 💡 *Analogía:* La carpeta de cliente en el fichero de cartera comercial.
+  * 🎯 *Responsabilidad:* Identificación única, nombres, apellidos, correo, teléfono, fecha de nacimiento con cálculo computado dinámico de `Edad` y vinculación opcional (`user_id`) con ASP.NET Core Identity.
+* [`Categoria.cs`](src/Firmeza.Domain/Entities/Categoria.cs):
+  * 💡 *Analogía:* El letrero gigante que identifica el pasillo de la ferretería.
+  * 🎯 *Responsabilidad:* Clasifica los productos en 20 familias técnicas comerciales y controla su estado activo.
+* [`Proveedor.cs`](src/Firmeza.Domain/Entities/Proveedor.cs):
+  * 💡 *Analogía:* El convenio de distribución mayorista firmado con la fábrica.
+  * 🎯 *Responsabilidad:* Registra fabricantes y distribuidores aliados (Argos, Pavco, Gerdau Diaco) con su NIT y datos de contacto.
+* [`MetodoPago.cs`](src/Firmeza.Domain/Entities/MetodoPago.cs):
+  * 💡 *Analogía:* La ventanilla autorizada de recaudo de dinero.
+  * 🎯 *Responsabilidad:* Canales comerciales habilitados (Efectivo, PSE, Tarjeta, Crédito Comercial a 30 días).
+
+#### 📁 `Enums/` (El Semáforo, Balizas y Señales Oficiales de Obra)
+* *Analogía General:* Las luces de baliza y señales de tránsito pintadas en las vías de la obra para evitar errores humanos.
 * [`EstadoVenta.cs`](src/Firmeza.Domain/Enums/EstadoVenta.cs): Semáforo comercial de facturas (`Pendiente`, `Completada`, `Anulada`).
 * [`EstadoDespacho.cs`](src/Firmeza.Domain/Enums/EstadoDespacho.cs): Semáforo logístico de fletes (`Pendiente`, `EnRuta`, `Entregado`, `Cancelado`).
 * [`EstadoVehiculo.cs`](src/Firmeza.Domain/Enums/EstadoVehiculo.cs): Disponibilidad en patio automotor (`Disponible`, `Alquilado`, `EnMantenimiento`).
 * [`EstadoAlquiler.cs`](src/Firmeza.Domain/Enums/EstadoAlquiler.cs): Ciclo de vigencia de contratos de maquinaria (`Activo`, `Finalizado`, `Cancelado`).
 * [`TipoMovimientoInventario.cs`](src/Firmeza.Domain/Enums/TipoMovimientoInventario.cs): Sentido del flujo físico de materiales (`Entrada`, `Salida`, `Ajuste`).
-* [`TipoVehiculo.cs`](src/Firmeza.Domain/Enums/TipoVehiculo.cs): Tipología de maquinaria y transporte (Volquetas, Retroexcavadoras, Camiones de estacas, Mezcladoras tipo trompo, Camionetas 4x4).
+* [`TipoVehiculo.cs`](src/Firmeza.Domain/Enums/TipoVehiculo.cs): Tipología de maquinaria y transporte (Volquetas, Retroexcavadoras, Camiones de estacas, Mezcladoras, Camionetas 4x4).
 * [`TipoMetodoPago.cs`](src/Firmeza.Domain/Enums/TipoMetodoPago.cs): Canales de cobranza autorizados (Efectivo, Transferencia, Tarjeta, Crédito 30 días, etc.).
 * [`TipoIdentificacion.cs`](src/Firmeza.Domain/Enums/TipoIdentificacion.cs): Documentos legales admitidos (CC, NIT, CE, RUT, Pasaporte).
-* [`UnidadMedida.cs`](src/Firmeza.Domain/Enums/UnidadMedida.cs): Estándares de cubicación y peso (Bulto 50kg, Kilogramo, Tonelada, Metro lineal, Metro cúbico, Galón, Unidad).
+* [`UnidadMedida.cs`](src/Firmeza.Domain/Enums/UnidadMedida.cs): Estándares de empaque y volumen (Bulto 50kg, Kilogramo, Tonelada, Metro lineal, Metro cúbico, Galón, Unidad).
 * [`PrioridadDespacho.cs`](src/Firmeza.Domain/Enums/PrioridadDespacho.cs): Grado de urgencia del flete a obra (`Baja`, `Normal`, `Alta`, `Urgente`).
 * [`EstadoCotizacion.cs`](src/Firmeza.Domain/Enums/EstadoCotizacion.cs): Ciclo de vida de propuestas comerciales (`Borrador`, `Enviada`, `Aprobada`, `Rechazada`, `Vencida`).
 
 #### 📁 `Events/` (El Sistema de Radiocomunicación y Sirenas de Alarma)
-* *Analogía:* El radioteléfono de canal abierto en la solapa del ingeniero residente: cuando ocurre un hecho importante en un área, lo anuncia por radio para que los demás reaccionen en cadena sin acoplarse físicamente.
-* [`VentaRegistradaDomainEvent.cs`](src/Firmeza.Domain/Events/VentaRegistradaDomainEvent.cs): *"¡Venta cobrada con éxito!"*. Desencadena la generación del PDF en disco y la notificación por correo SMTP.
+* *Analogía General:* El radioteléfono de canal abierto en la solapa del jefe de obra: anuncia por radio un hecho para que los departamentos reaccionen sin acoplarse físicamente.
+* [`VentaRegistradaDomainEvent.cs`](src/Firmeza.Domain/Events/VentaRegistradaDomainEvent.cs): *"¡Venta cobrada con éxito!"*. Desencadena la generación del comprobante PDF y el envío de correo SMTP.
 * [`VentaCanceladaDomainEvent.cs`](src/Firmeza.Domain/Events/VentaCanceladaDomainEvent.cs): *"¡Alerta, venta anulada!"*. Desencadena la restitución automática de existencias al almacén.
-* [`StockBajoDomainEvent.cs`](src/Firmeza.Domain/Events/StockBajoDomainEvent.cs): *"¡Sirena amarilla: existencias críticas en bodega (<= 10 unidades)!"*. Notifica al equipo de compras para reabastecimiento.
-* [`VehiculoAlquiladoDomainEvent.cs`](src/Firmeza.Domain/Events/VehiculoAlquiladoDomainEvent.cs): *"¡Maquinaria asignada en contrato!"*. Bloquea el equipo en el parque automotor para evitar doble reserva.
-* [`VehiculoLiberadoDomainEvent.cs`](src/Firmeza.Domain/Events/VehiculoLiberadoDomainEvent.cs): *"¡Maquinaria recibida y devuelta a patio!"*. Restablece el estado a disponible en el catálogo de alquiler.
-* [`DespachoEnRutaDomainEvent.cs`](src/Firmeza.Domain/Events/DespachoEnRutaDomainEvent.cs): *"¡Camión en carretera rumbo a la construcción!"*. Notifica al receptor en sitio de la llegada inminente.
-* [`DespachoEntregadoDomainEvent.cs`](src/Firmeza.Domain/Events/DespachoEntregadoDomainEvent.cs): *"¡Material descargado a conformidad en la obra!"*. Cierra formalmente la guía de remisión.
+* [`StockBajoDomainEvent.cs`](src/Firmeza.Domain/Events/StockBajoDomainEvent.cs): *"¡Sirena amarilla: stock crítico (<= 10 unidades)!"*. Alerta al equipo de compras para contactar al proveedor.
+* [`VehiculoAlquiladoDomainEvent.cs`](src/Firmeza.Domain/Events/VehiculoAlquiladoDomainEvent.cs): *"¡Maquinaria asignada en contrato!"*. Bloquea el vehículo en el catálogo para evitar doble reserva.
+* [`VehiculoLiberadoDomainEvent.cs`](src/Firmeza.Domain/Events/VehiculoLiberadoDomainEvent.cs): *"¡Maquinaria devuelta a patio!"*. Restablece el estado a `Disponible` en el catálogo de alquiler.
+* [`DespachoEnRutaDomainEvent.cs`](src/Firmeza.Domain/Events/DespachoEnRutaDomainEvent.cs): *"¡Camión en carretera rumbo a la construcción!"*. Notifica al cliente de la entrega inminente.
+* [`DespachoEntregadoDomainEvent.cs`](src/Firmeza.Domain/Events/DespachoEntregadoDomainEvent.cs): *"¡Material descargado a conformidad en obra!"*. Cierra la guía de remisión.
 
-#### 📁 `Exceptions/` & `Errors/` (Las Paradas de Emergencia y el Libro de Averías)
-* *Analogía:* Los botones tipo hongo de parada de emergencia en las grúas: si se detecta un peligro estructural, desconectan el motor en microsegundos antes de que cause un accidente.
-* [`StockInsuficienteException.cs`](src/Firmeza.Domain/Exceptions/StockInsuficienteException.cs): *El sensor que frena la banda transportadora cuando no queda material físico*. Impide ventas que superen las existencias reales.
-* [`ReglaNegocioException.cs`](src/Firmeza.Domain/Exceptions/ReglaNegocioException.cs): *El inspector que niega el ingreso por incumplimiento de protocolos*. Protege estados finales cerrados (facturas ya anuladas o tarifas negativas).
-* [`ValorInvalidoException.cs`](src/Firmeza.Domain/Exceptions/ValorInvalidoException.cs): *El calibrador que expulsa un tornillo con rosca deforme*. Protege la integridad de los Value Objects.
+#### 📁 `Exceptions/` & `Errors/` (Paradas de Emergencia y Libro de Averías)
+* *Analogía General:* Los botones tipo hongo de parada de emergencia en las grúas: desconectan el motor en microsegundos si se detecta un peligro estructural.
 * [`DomainException.cs`](src/Firmeza.Domain/Exceptions/DomainException.cs): Clase base de todas las fallas operativas internas del dominio.
-* [`DomainError.cs`](src/Firmeza.Domain/Errors/DomainError.cs) y [`DomainErrors.cs`](src/Firmeza.Domain/Errors/DomainErrors.cs): *El libro oficial de códigos de avería y fallas*. Proporciona códigos y descripciones estructuradas y localizadas para clientes, productos, ventas, logística y flota.
+* [`StockInsuficienteException.cs`](src/Firmeza.Domain/Exceptions/StockInsuficienteException.cs): *El sensor que frena la banda transportadora cuando no queda material físico*. Impide compras que superen existencias reales.
+* [`ReglaNegocioException.cs`](src/Firmeza.Domain/Exceptions/ReglaNegocioException.cs): *El inspector que niega el ingreso por incumplimiento de protocolos*. Protege estados finales cerrados (facturas ya anuladas o tarifas negativas).
+* [`ValorInvalidoException.cs`](src/Firmeza.Domain/Exceptions/ValorInvalidoException.cs): *El calibrador que expulsa un tornillo con rosca deforme*. Protege la integridad de formato de los Value Objects.
+* [`DomainError.cs`](src/Firmeza.Domain/Errors/DomainError.cs) y [`DomainErrors.cs`](src/Firmeza.Domain/Errors/DomainErrors.cs): *El catálogo oficial de códigos de avería*. Proporciona códigos y descripciones estructuradas de errores comerciales.
 
-#### 📁 `Abstractions/` (Los Contratos Notariales y Especificaciones Técnicas - Puertos)
-* *Analogía:* Los pliegos de licitación pública que exigen: *"La empresa que provea el servicio de custodia de datos debe contar con bóveda ignífuga y transacciones atómicas"*. Al Dominio no le importa si es PostgreSQL, SQL Server o un servicio en la nube quien cumpla la tarea, siempre y cuando satisfaga el pliego.
-* [`IUnitOfWork.cs`](src/Firmeza.Domain/Abstractions/IUnitOfWork.cs): *El protocolo de la bóveda bancaria*. Exige que todas las operaciones de una orden se guarden juntas en una sola transacción atómica (`SaveChangesAsync`), con control explícito de `BeginTransactionAsync`, `CommitTransactionAsync` y `RollbackTransactionAsync`.
-* [`IRepository.cs`](src/Firmeza.Domain/Abstractions/IRepository.cs): *El contrato base del bodeguero general*. Define métodos universales de persistencia (`GetByIdAsync`, `GetAllAsync`, `FindAsync`, `AddAsync`, `Update`, `Remove`, `ExistsAsync`).
-* Contratos especializados de persistencia: [`IClienteRepository.cs`](src/Firmeza.Domain/Abstractions/IClienteRepository.cs), [`IProductoRepository.cs`](src/Firmeza.Domain/Abstractions/IProductoRepository.cs), [`IVentaRepository.cs`](src/Firmeza.Domain/Abstractions/IVentaRepository.cs), [`IVehiculoRepository.cs`](src/Firmeza.Domain/Abstractions/IVehiculoRepository.cs), [`IAlquilerRepository.cs`](src/Firmeza.Domain/Abstractions/IAlquilerRepository.cs), [`IDespachoRepository.cs`](src/Firmeza.Domain/Abstractions/IDespachoRepository.cs), [`IMovimientoInventarioRepository.cs`](src/Firmeza.Domain/Abstractions/IMovimientoInventarioRepository.cs), [`ICategoriaRepository.cs`](src/Firmeza.Domain/Abstractions/ICategoriaRepository.cs), [`IProveedorRepository.cs`](src/Firmeza.Domain/Abstractions/IProveedorRepository.cs).
-* [`IDomainEventDispatcher.cs`](src/Firmeza.Domain/Abstractions/IDomainEventDispatcher.cs) e [`IDomainEventHandler.cs`](src/Firmeza.Domain/Abstractions/IDomainEventHandler.cs): *La torre de control repetidora y las cuadrillas de respuesta rápida*. Despachan y consumen eventos de dominio de forma asíncrona.
-* [`IDateTimeProvider.cs`](src/Firmeza.Domain/Abstractions/IDateTimeProvider.cs): *El reloj atómico maestro de la compañía*. Abstrae `DateTime.UtcNow` permitiendo simular fechas pasadas o futuras en pruebas unitarias deterministas.
-* [`ISpecification.cs`](src/Firmeza.Domain/Abstractions/ISpecification.cs): *El tamiz o zaranda de clasificación*. Permite componer filtros de consulta complejos y reutilizables.
+#### 📄 `Firmeza.Domain.csproj`
+* 💡 *Analogía:* El acta de pureza de la orden de ingenieros.
+* 🎯 *Responsabilidad:* Archivo de proyecto .NET 10 (C# 13). Declara cero etiquetas `<PackageReference>`, garantizando que el núcleo no tenga ninguna dependencia externa.
 
 ---
 
 ### 2. 🔵 Capa de Aplicación: `src/Firmeza.Application`
 
 > 📋 **Analogía:** *La Dirección de Operaciones, los Jefes de Cuadrilla y las Planillas de Trámite*.  
-> **Propósito Técnico:** Orquesta los casos de uso del sistema. Conoce el Dominio y define qué tareas deben realizarse, pero desconoce por completo la tecnología de la base de datos o el protocolo HTTP. Define las fichas de datos inmutables (DTOs), las excepciones de negocio de nivel aplicación y los contratos de servicios de infraestructura.
+> **Propósito Técnico:** Orquesta los casos de uso del sistema. Conoce el Dominio y define qué tareas deben ejecutarse, pero desconoce por completo la base de datos o el protocolo HTTP. Define fichas de datos inmutables (DTOs), excepciones de flujo y contratos de servicios.
 
 ```text
 src/Firmeza.Application/
@@ -263,44 +349,45 @@ src/Firmeza.Application/
 ├── Interfaces/               # 📜 Los Manuales de Procedimientos Estandarizados (SOP)
 ├── Mappings/                 # 🌐 El Perito Traductor Simultáneo (AutoMapper)
 ├── DependencyInjection.cs    # 🤝 El Registro de Servicios de la Capa de Aplicación
-└── Firmeza.Application.csproj
+└── Firmeza.Application.csproj# 📄 La Definición de Proyecto de la Capa de Casos de Uso
 ```
 
 #### 📁 `DTOs/` (Planillas de Pedido y Fichas de Trámite Inmutables)
-* *Analogía:* Las hojas de papel autocopiante y planillas estándar con casillas exactas. No contienen lógica de negocio pesada, solo los datos justos y seguros que viajan hacia y desde los clientes.
-* [`AuthDto.cs`](src/Firmeza.Application/DTOs/AuthDto.cs): *El formulario de carnetización y acceso*. Records `LoginDto` (credenciales de entrada), `RegisterDto` (afiliación) y `AuthResponseDto` (token JWT y metadatos del usuario).
-* [`ProductoDto.cs`](src/Firmeza.Application/DTOs/ProductoDto.cs): *La ficha de catálogo comercial del material*. Proyecta el producto con los nombres calculados de `CategoriaNombre` y `ProveedorRazonSocial`, protegiendo entidades internas.
+* *Analogía General:* Las hojas de papel carbón y formularios estandarizados con casillas exactas. No llevan lógica pesada, solo los datos justos y seguros que viajan hacia y desde el exterior.
+* [`AuthDto.cs`](src/Firmeza.Application/DTOs/AuthDto.cs): *El formulario de carnetización y acceso*. Records `LoginDto` (usuario y contraseña), `RegisterDto` (afiliación de clientes) y `AuthResponseDto` (token JWT y perfil).
+* [`ProductoDto.cs`](src/Firmeza.Application/DTOs/ProductoDto.cs): *La ficha técnica del catálogo comercial*. Records `ProductoDto` (con nombres calculados de categoría y proveedor), `CreateProductoDto` y `UpdateProductoDto`.
 * [`CategoriaDto.cs`](src/Firmeza.Application/DTOs/CategoriaDto.cs): *La ficha del pasillo comercial*. Record `CategoriaDto` enriquecido con el cálculo en vivo de `TotalProductos`, `CreateCategoriaDto` y `UpdateCategoriaDto`.
-* [`VentaDto.cs`](src/Firmeza.Application/DTOs/VentaDto.cs): *La proforma de liquidación y factura de compra*. Desglosa cliente, medio de pago, subtotal, IVA (19%), total y la lista de renglones (`DetalleVentaDto`).
-* [`ClienteDto.cs`](src/Firmeza.Application/DTOs/ClienteDto.cs): *El expediente de afiliación de cliente*. Transporta datos de contacto y el cálculo de mayoría de edad.
-* [`CommercialDtos.cs`](src/Firmeza.Application/DTOs/CommercialDtos.cs): *Los formatos de remisión secundaria*. DTOs para Proveedores, Medios de Pago, Flota (`VehiculoDto`), Contratos de Alquiler, Guías de Despacho y Tarjetas Kardex.
+* [`ClienteDto.cs`](src/Firmeza.Application/DTOs/ClienteDto.cs): *El expediente de afiliación de cliente*. Transporta datos de contacto y el cálculo instantáneo de mayoría de edad.
+* [`CommercialDtos.cs`](src/Firmeza.Application/DTOs/CommercialDtos.cs): *Los formatos de remisión secundaria*. Records para Proveedores, Medios de Pago, Flota (`VehiculoDto`), Contratos de Alquiler, Guías de Despacho y Tarjetas Kardex.
 * [`DashboardDto.cs`](src/Firmeza.Application/DTOs/DashboardDto.cs): *El informe ejecutivo para la junta directiva*. Resumen de recaudación, órdenes activas, productos con stock bajo y top 5 artículos más vendidos.
 * [`ExcelDto.cs`](src/Firmeza.Application/DTOs/ExcelDto.cs): *El manifiesto de carga masiva en planilla*. Registros planos para importar o exportar lotes de inventario desde hojas de cálculo.
+* [`VentaDto.cs`](src/Firmeza.Application/DTOs/VentaDto.cs): *La proforma de liquidación y factura de compra*. Desglosa cliente, medio de pago, subtotal, IVA (19%), total y la lista de renglones (`DetalleVentaDto`).
 
 #### 📁 `Exceptions/` (Las Boletas Oficiales de Rechazo de Trámite en Ventanilla)
-* *Analogía:* Cuando un cliente presenta un trámite incompleto o contradictorio, el jefe de operaciones le sella la hoja con el motivo exacto para que sepa exactamente qué corregir.
-* [`NotFoundException.cs`](src/Firmeza.Application/Exceptions/NotFoundException.cs): *"El registro solicitado no existe en los archivos"* -> Mapea limpiamente a **HTTP 404 Not Found**.
+* *Analogía General:* Cuando un cliente presenta un trámite incompleto o contradictorio, el jefe de operaciones le sella la hoja con el motivo exacto para que sepa qué corregir.
+* [`NotFoundException.cs`](src/Firmeza.Application/Exceptions/NotFoundException.cs): *"El registro solicitado no existe en los archivos"* -> Mapea a **HTTP 404 Not Found**.
 * [`ConflictException.cs`](src/Firmeza.Application/Exceptions/ConflictException.cs): *"Ya existe un registro con ese documento único, NIT o placa"* -> Mapea a **HTTP 409 Conflict**.
 * [`ValidationException.cs`](src/Firmeza.Application/Exceptions/ValidationException.cs): *"El formulario presenta casillas obligatorias vacías o formatos no válidos"* -> Mapea a **HTTP 400 Bad Request**.
 * [`ForbiddenAccessException.cs`](src/Firmeza.Application/Exceptions/ForbiddenAccessException.cs): *"No posee el nivel jerárquico ni la autorización requerida para este trámite"* -> Mapea a **HTTP 403 Forbidden**.
 
 #### 📁 `Interfaces/` (Los Manuales de Procedimientos Estandarizados - SOP)
-* *Analogía:* El manual de operaciones de la compañía: lista cada trámite que cualquier área puede solicitar al personal de operaciones.
-* [`IClienteService.cs`](src/Firmeza.Application/Interfaces/IClienteService.cs): Contrato de gestión de cartera, verificación de duplicados, actualización y borrado seguro de clientes.
-* [`IProductoService.cs`](src/Firmeza.Application/Interfaces/IProductoService.cs): Contrato de catálogo, actualización atómica de existencias y desactivación lógica.
-* [`IVentaService.cs`](src/Firmeza.Application/Interfaces/IVentaService.cs): Contrato del ciclo de venta, cálculo tributario de IVA, emisión de recibos y anulación.
-* [`IDashboardService.cs`](src/Firmeza.Application/Interfaces/IDashboardService.cs): Contrato para cálculo y agregación en tiempo real de indicadores comerciales.
-* [`IJwtTokenService.cs`](src/Firmeza.Application/Interfaces/IJwtTokenService.cs): Contrato de expedición y validación criptográfica de tokens JWT.
-* [`IExcelService.cs`](src/Firmeza.Application/Interfaces/IExcelService.cs): Contrato de procesamiento masivo de hojas de cálculo EPPlus.
-* [`IPdfService.cs`](src/Firmeza.Application/Interfaces/IPdfService.cs): Contrato de diagramación y generación de facturas en PDF con iText.
-* [`IEmailService.cs`](src/Firmeza.Application/Interfaces/IEmailService.cs): Contrato de despacho de mensajería postal electrónica con adjuntos.
+* *Analogía General:* El manual de operaciones de la compañía: lista cada trámite que cualquier área puede solicitar a las cuadrillas operativas.
+* [`IClienteService.cs`](src/Firmeza.Application/Interfaces/IClienteService.cs): Procedimientos de registro, validación de homónimos, actualización y borrado seguro de clientes.
+* [`IProductoService.cs`](src/Firmeza.Application/Interfaces/IProductoService.cs): Gestión de altas de materiales, alertas de existencia mínima y soft-delete de artículos.
+* [`IVentaService.cs`](src/Firmeza.Application/Interfaces/IVentaService.cs): Flujo completo de cobro de factura, control de existencias, cálculo tributario de IVA y reversión.
+* [`IDashboardService.cs`](src/Firmeza.Application/Interfaces/IDashboardService.cs): Generación de reportes de rentabilidad y métricas en tiempo real.
+* [`IJwtTokenService.cs`](src/Firmeza.Application/Interfaces/IJwtTokenService.cs): Protocolo de emisión de credenciales de seguridad encriptadas.
+* [`IExcelService.cs`](src/Firmeza.Application/Interfaces/IExcelService.cs): Procedimiento de procesamiento por lotes de hojas de cálculo con EPPlus.
+* [`IPdfService.cs`](src/Firmeza.Application/Interfaces/IPdfService.cs): Protocolo de diagramación e impresión de facturas oficiales con iText.
+* [`IEmailService.cs`](src/Firmeza.Application/Interfaces/IEmailService.cs): Protocolo de despacho de mensajería postal electrónica con adjuntos vía SMTP.
 
 #### 📁 `Mappings/` (El Perito Traductor Simultáneo)
 * *Analogía:* El perito traductor oficial que convierte instantáneamente las palabras del cliente (DTOs) al lenguaje técnico de ingeniería de los planos (Entidades) y viceversa.
 * [`MappingProfile.cs`](src/Firmeza.Application/Mappings/MappingProfile.cs): Configuración centralizada de AutoMapper 16. Mapea bidireccionalmente las 11 entidades y DTOs, resolviendo propiedades computadas (`CategoriaNombre`, `TotalProductos`, `DiasAlquiler`).
 
-#### 📄 `DependencyInjection.cs`
-* *Analogía:* La lista donde la oficina de operaciones registra qué traductores y manuales están disponibles en la empresa (`AddApplicationServices()`).
+#### 📄 `DependencyInjection.cs` & `Firmeza.Application.csproj`
+* [`DependencyInjection.cs`](src/Firmeza.Application/DependencyInjection.cs): Extensión `AddApplicationServices()` que registra AutoMapper y servicios de aplicación en el contenedor IoC.
+* [`Firmeza.Application.csproj`](src/Firmeza.Application/Firmeza.Application.csproj): Proyecto .NET 10 con dependencias exclusivas hacia `Firmeza.Domain` y AutoMapper.
 
 ---
 
@@ -312,14 +399,14 @@ src/Firmeza.Application/
 ```text
 src/Firmeza.Infrastructure/
 ├── Persistence/                      # 🏢 La Bóveda Subterránea y el Almacén Automatizado
-│   ├── Configurations/              # 🗄️ Los Anaqueles con Medidas Exactas (IEntityTypeConfiguration)
+│   ├── Configurations/              # 🗄️ Los 11 Anaqueles con Medidas Exactas (IEntityTypeConfiguration)
 │   ├── Interceptors/                # 🎥 Las Cámaras y Sensores Automáticos de Entrada (Auditoría/Eventos)
 │   ├── Migrations/                  # 📐 El Historial de Reformas Arquitectónicas (.gitkeep)
-│   ├── Repositories/                # 🚜 Los Operarios de Bodega con Montacargas y la Caja Fuerte
+│   ├── Repositories/                # 🚜 Los 11 Operarios de Bodega con Montacargas y la Caja Fuerte
 │   ├── Seeders/                     # 📦 La Dotación Inicial del Almacén (DbSeeder)
 │   ├── ApplicationDbContext.cs      # 📖 El Libro Mayor de Contabilidad y Mapeo Central
 │   └── AppDbContext.cs              # 📖 Subclase y Alias Corto de Conveniencia
-├── Services/                         # 🛠️ Los Talleres de Especialistas Industriales
+├── Services/                         # 🛠️ Los 8 Talleres de Especialistas Industriales
 │   ├── ClienteService.cs
 │   ├── ProductoService.cs
 │   ├── VentaService.cs
@@ -329,34 +416,47 @@ src/Firmeza.Infrastructure/
 │   ├── PdfService.cs                # 🖨️ Imprenta Oficial de Facturas Comerciales (iText)
 │   └── EmailService.cs              # 📬 Mensajero Postal Motorizado (SMTP)
 ├── DependencyInjection.cs            # ⚡ El Tablero Eléctrico General de Infraestructura
-└── Firmeza.Infrastructure.csproj
+└── Firmeza.Infrastructure.csproj    # 📄 Definición de Proyecto con Librerías Industriales
 ```
 
-#### 📁 `Persistence/` (La Bóveda Subterránea y el Almacén Automatizado)
-* *Analogía:* El búnker físico donde se almacenan todos los bienes y donde reposan los libros de actas oficiales.
-* [`ApplicationDbContext.cs`](src/Firmeza.Infrastructure/Persistence/ApplicationDbContext.cs) & [`AppDbContext.cs`](src/Firmeza.Infrastructure/Persistence/AppDbContext.cs): *El Libro Mayor Contable*. Hereda de `IdentityDbContext`, administra las 18 tablas de PostgreSQL y descubre y aplica automáticamente todas las configuraciones fluidas mediante `ApplyConfigurationsFromAssembly`.
-* **`Configurations/`:** *Los anaqueles y estanterías fabricados a medida*. 11 clases `IEntityTypeConfiguration<T>` independientes (una por entidad, respetando SRP). Le dictan a PostgreSQL las precisiones de columnas (`numeric(14,2)`, `varchar(200)`), restricciones de unicidad, llaves foráneas e índices de rendimiento.
-* **`Interceptors/`:** *Las cámaras inteligentes y sensores perimétricos*:
-  * [`AuditableEntityInterceptor.cs`](src/Firmeza.Infrastructure/Persistence/Interceptors/AuditableEntityInterceptor.cs): *El reloj estampador automático*. Intercepta cada operación de guardado y estampa automáticamente la fecha UTC de creación o modificación sin requerir intervención humana.
-  * [`DispatchDomainEventsInterceptor.cs`](src/Firmeza.Infrastructure/Persistence/Interceptors/DispatchDomainEventsInterceptor.cs): *La antena perimetral de radio*. Justo antes de confirmar la transacción (`SavingChangesAsync`), captura todos los eventos de dominio acumulados en los agregados raíz y los transmite inmediatamente a sus suscriptores.
-* **`Repositories/`:** *Los operarios de bodega con montacargas*.
-  * [`GenericRepository<T>`](src/Firmeza.Infrastructure/Persistence/Repositories/GenericRepository.cs): El operario general que sabe archivar, buscar, listar o retirar cualquier elemento estándar.
-  * Repositorios específicos (`ProductoRepository`, `VentaRepository`, `VehiculoRepository`, `AlquilerRepository`, etc.): Expertos que conocen las rutas complejas de su sección (buscar por SKU, alertar stock bajo, consultar maquinaria disponible para obra).
-  * [`UnitOfWork.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/UnitOfWork.cs): *El candado de la caja fuerte bancaria*. Garantiza atomicidad estricta (o todo el pedido se cobra y descuenta completo, o la operación se cancela intacta).
-* **`Seeders/`:** *La dotación inicial de apertura de la tienda*.
-  * [`DbSeeder.cs`](src/Firmeza.Infrastructure/Persistence/Seeders/DbSeeder.cs) e [`IDbSeeder.cs`](src/Firmeza.Infrastructure/Persistence/Seeders/IDbSeeder.cs): Al inaugurar el sistema, crea de forma idempotente los 10 roles del personal, el usuario superadministrador y los medios de pago obligatorios.
+#### 📁 `Persistence/Configurations/` (Los 11 Anaqueles con Medidas Exactas - Fluent API)
+* *Analogía General:* Los estantes a medida en la ferretería: cada material tiene su soporte reforzado para no deformarse ni caerse.
+* [`AlquilerConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/AlquilerConfiguration.cs): Mapea `alquileres`, precisión de `valor_diario` y `total` (`numeric(14,2)`), y relaciones con `clientes` y `vehiculos`.
+* [`CategoriaConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/CategoriaConfiguration.cs): Mapea `categorias`, nombre único (`varchar(100)`), descripción e índice de unicidad.
+* [`ClienteConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/ClienteConfiguration.cs): Mapea `clientes`, identificación única (`varchar(20)`), email único y relación 1 a 1 opcional con `AspNetUsers`.
+* [`DespachoConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/DespachoConfiguration.cs): Mapea `despachos`, flete (`numeric(12,2)`), estados y relación 1 a 1 con la venta.
+* [`DetalleVentaConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/DetalleVentaConfiguration.cs): Mapea `detalles_venta`, precisión de precio y subtotal, y eliminación restringida con productos.
+* [`MetodoPagoConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/MetodoPagoConfiguration.cs): Mapea `metodos_pago`, código único (`varchar(30)`) y descripción.
+* [`MovimientoInventarioConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/MovimientoInventarioConfiguration.cs): Mapea `movimientos_inventario`, campos Kardex y relación con productos y usuarios.
+* [`ProductoConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/ProductoConfiguration.cs): Mapea `productos`, código SKU único (`varchar(50)`), precio (`numeric(14,2)`), stock e índices de búsqueda.
+* [`ProveedorConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/ProveedorConfiguration.cs): Mapea `proveedores`, NIT único (`varchar(20)`) y datos de contacto.
+* [`VehiculoConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/VehiculoConfiguration.cs): Mapea `vehiculos`, placa vehicular única (`varchar(10)`), tonelaje y tarifa diaria.
+* [`VentaConfiguration.cs`](src/Firmeza.Infrastructure/Persistence/Configurations/VentaConfiguration.cs): Mapea `ventas`, número consecutivo único (`varchar(20)`), subtotal, IVA 19%, total y cascada con `detalles_venta`.
 
-#### 📁 `Services/` (Los Talleres de Especialistas Industriales)
-* *Analogía:* Los talleres de manufactura y servicios especializados que asisten a la constructora.
-* [`JwtTokenService.cs`](src/Firmeza.Infrastructure/Services/JwtTokenService.cs): *El taller de plastificado de carnets de seguridad*. Construye y firma credenciales JWT simétricas con HMAC-SHA256, inyectando el rol jerárquico, identificadores y tiempo de expiración.
-* [`ExcelService.cs`](src/Firmeza.Infrastructure/Services/ExcelService.cs): *La máquina procesadora de manifiestos masivos de importación*. Utiliza EPPlus 8 para leer y generar hojas de cálculo de miles de filas, normalizando categorías y proveedores en memoria.
-* [`PdfService.cs`](src/Firmeza.Infrastructure/Services/PdfService.cs): *La imprenta oficial de facturación con membrete*. Utiliza el motor gráfico iText 9 para diagramar comprobantes comerciales con tablas, desgloses tributarios y archivo en `wwwroot/recibos/`.
-* [`EmailService.cs`](src/Firmeza.Infrastructure/Services/EmailService.cs): *El mensajero postal motorizado*. Conecta por SMTP seguro (TLS/SSL), inyecta plantillas HTML profesionales y adjunta la factura en PDF para el comprador.
-* [`DashboardService.cs`](src/Firmeza.Infrastructure/Services/DashboardService.cs): *La pantalla de control de mando en la sala de juntas*. Agrega métricas en tiempo real de ingresos brutos, ventas del día, productos bajo stock y top de artículos.
-* [`ClienteService.cs`](src/Firmeza.Infrastructure/Services/ClienteService.cs), [`ProductoService.cs`](src/Firmeza.Infrastructure/Services/ProductoService.cs), [`VentaService.cs`](src/Firmeza.Infrastructure/Services/VentaService.cs): Las cuadrillas operativas que ejecutan las directrices del negocio.
+#### 📁 `Persistence/Interceptors/` (Cámaras y Sensores Automáticos de Entrada)
+* [`AuditableEntityInterceptor.cs`](src/Firmeza.Infrastructure/Persistence/Interceptors/AuditableEntityInterceptor.cs): *El reloj estampador automático*. Intercepta `SaveChanges` para inyectar marcas de tiempo UTC en entidades auditables sin intervención humana.
+* [`DispatchDomainEventsInterceptor.cs`](src/Firmeza.Infrastructure/Persistence/Interceptors/DispatchDomainEventsInterceptor.cs): *La antena de radio perimetral*. Captura los eventos acumulados en los agregados raíz y los despacha mediante `IDomainEventDispatcher` antes de consolidar la transacción en la base de datos.
 
-#### 📄 `DependencyInjection.cs`
-* *Analogía:* El tablero eléctrico principal: conecta el suministro de PostgreSQL, los permisos de Identity, el servidor SMTP y los repositorios para energizar toda la infraestructura (`AddInfrastructureServices()`).
+#### 📁 `Persistence/Repositories/` (Los 11 Operarios de Bodega con Montacargas y la Caja Fuerte)
+* [`GenericRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/GenericRepository.cs): Implementación EF Core del contrato `IRepository<T>` con `AsNoTracking()` para lecturas de alto rendimiento.
+* Repositorios especializados: [`AlquilerRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/AlquilerRepository.cs), [`CategoriaRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/CategoriaRepository.cs), [`ClienteRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/ClienteRepository.cs), [`DespachoRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/DespachoRepository.cs), [`MovimientoInventarioRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/MovimientoInventarioRepository.cs), [`ProductoRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/ProductoRepository.cs), [`ProveedorRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/ProveedorRepository.cs), [`VehiculoRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/VehiculoRepository.cs) y [`VentaRepository.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/VentaRepository.cs).
+* [`UnitOfWork.cs`](src/Firmeza.Infrastructure/Persistence/Repositories/UnitOfWork.cs): *El candado de la caja fuerte bancaria*. Coordina transacciones ACID atómicas entre los 10 repositorios y PostgreSQL.
+
+#### 📁 `Persistence/Seeders/` & Contextos
+* [`IDbSeeder.cs`](src/Firmeza.Infrastructure/Persistence/Seeders/IDbSeeder.cs) & [`DbSeeder.cs`](src/Firmeza.Infrastructure/Persistence/Seeders/DbSeeder.cs): Siembra idempotente al arranque de los 10 roles Identity, el superadministrador (`admin@firmeza.com`) y medios de pago.
+* [`ApplicationDbContext.cs`](src/Firmeza.Infrastructure/Persistence/ApplicationDbContext.cs) & [`AppDbContext.cs`](src/Firmeza.Infrastructure/Persistence/AppDbContext.cs): Contexto principal derivado de `IdentityDbContext`, integrando las 18 tablas y los interceptores.
+
+#### 📁 `Services/` (Los 8 Talleres de Especialistas Industriales)
+* [`JwtTokenService.cs`](src/Firmeza.Infrastructure/Services/JwtTokenService.cs): *Taller de carnetización*. Construye y firma tokens JWT con HMAC-SHA256, roles jerárquicos y tiempo de expiración.
+* [`ExcelService.cs`](src/Firmeza.Infrastructure/Services/ExcelService.cs): *Procesadora de manifiestos masivos*. Motor EPPlus 8 para importación normalizada y desnormalizada y exportación de catálogos.
+* [`PdfService.cs`](src/Firmeza.Infrastructure/Services/PdfService.cs): *Imprenta oficial de facturación*. Motor iText 9 que genera comprobantes con tablas, desgloses tributarios y archivo en `wwwroot/recibos/`.
+* [`EmailService.cs`](src/Firmeza.Infrastructure/Services/EmailService.cs): *Mensajero postal motorizado*. Servicio SMTP con TLS/SSL para despacho de bienvenida y facturas PDF adjuntas.
+* [`DashboardService.cs`](src/Firmeza.Infrastructure/Services/DashboardService.cs): *Pantalla gigante de control gerencial*. Agrega en tiempo real ingresos, órdenes activas, stock bajo y top productos.
+* [`ClienteService.cs`](src/Firmeza.Infrastructure/Services/ClienteService.cs), [`ProductoService.cs`](src/Firmeza.Infrastructure/Services/ProductoService.cs), [`VentaService.cs`](src/Firmeza.Infrastructure/Services/VentaService.cs): Cuadrillas operativas que implementan los casos de uso con persistencia relacional.
+
+#### 📄 `DependencyInjection.cs` & `Firmeza.Infrastructure.csproj`
+* [`DependencyInjection.cs`](src/Firmeza.Infrastructure/DependencyInjection.cs): Extensión `AddInfrastructureServices()` que conecta PostgreSQL (Npgsql), Identity, Repositorios, Interceptores y Servicios.
+* [`Firmeza.Infrastructure.csproj`](src/Firmeza.Infrastructure/Firmeza.Infrastructure.csproj): Proyecto .NET 10 con referencias a Npgsql.EntityFrameworkCore.PostgreSQL, EPPlus, itext7 y MailKit/System.Net.Mail.
 
 ---
 
@@ -369,44 +469,38 @@ src/Firmeza.Infrastructure/
 src/Firmeza.API/
 ├── Controllers/              # 💁‍♂️ Los 13 Asesores Comerciales y Ventanillas de Atención
 ├── Middleware/               # 🧐 El Inspector de Calidad y Protocolo en Ventanilla (RFC 7807)
-├── Properties/               # 🚦 Configuración de Puertos y Perfiles de Ejecución
-├── wwwroot/recibos/          # 🗄️ El Archivero Físico de Facturas PDF Generadas
-├── appsettings.json          # 🔐 Caja Fuerte de Secretos, Cadenas de BD y Credenciales SMTP
-├── appsettings.Development.json # 🛠️ Ajustes Especiales para el Banco de Pruebas Local
+├── Properties/               # 🚦 launchSettings.json (Perfiles HTTP 5125 y HTTPS 7049)
+├── wwwroot/recibos/          # 🗄️ El Archivero Físico de Facturas PDF Generadas (.gitkeep)
+├── appsettings.json          # 🔐 Caja Fuerte de Configuración (BD PostgreSQL, JWT y SMTP)
+├── appsettings.Development.json # 🛠️ Ajustes Especiales para el Entorno Local
 ├── Program.cs                # 🔔 El Maestro de Ceremonias y Apertura de Puertas
 ├── Firmeza.API.http          # ⚡ La Carpeta de Pruebas Rápidas del Auditor
-└── Firmeza.API.csproj
+└── Firmeza.API.csproj        # 📄 Proyecto Web API (.NET 10 con Scalar y OpenAPI)
 ```
 
-#### 📁 `Controllers/` (Los Asesores Comerciales en Mostrador)
-* *Analogía:* Cada asesor atiende una ventanilla identificada con un letrero luminoso según su especialidad:
-* [`AuthController.cs`](src/Firmeza.API/Controllers/AuthController.cs): *La ventanilla de recepción y carnetización*. Atiende `/login` para autenticar usuarios y `/register` para dar de alta clientes nuevos.
-* [`ProductsController.cs`](src/Firmeza.API/Controllers/ProductsController.cs): *El mostrador de materiales y herramientas*. Catálogo, creación, actualización, soft-delete e importación/exportación masiva en Excel.
-* [`CategoriesController.cs`](src/Firmeza.API/Controllers/CategoriesController.cs): *El directorio del centro comercial*. Consulta de las 20 familias, conteo de productos por línea y activación/desactivación.
-* [`ClientsController.cs`](src/Firmeza.API/Controllers/ClientsController.cs): *La atención a empresas y constructores*. Registro de clientes, cálculo de edad y consultas de cartera.
-* [`SalesController.cs`](src/Firmeza.API/Controllers/SalesController.cs): *La caja registradora principal*. Cobro de compras, emisión automática de factura PDF, anulación y exportación histórica a Excel.
-* [`DispatchesController.cs`](src/Firmeza.API/Controllers/DispatchesController.cs): *La oficina de fletes y logística*. Programación de envíos a pie de obra y actualización de estados (`EnRuta`, `Entregado`).
-* [`VehiclesController.cs`](src/Firmeza.API/Controllers/VehiclesController.cs): *El patio de exhibición de maquinaria*. Catálogo de volquetas, retroexcavadoras y camiones con tarifas de alquiler por día.
-* [`RentalsController.cs`](src/Firmeza.API/Controllers/RentalsController.cs): *La mesa de contratos de arrendamiento de maquinaria*. Firma de contratos por días y liberación automática del equipo al terminar.
-* [`InventoryMovementsController.cs`](src/Firmeza.API/Controllers/InventoryMovementsController.cs): *La taquilla de auditoría de inventario*. Consulta histórica de entradas, salidas y ajustes de stock.
-* [`SuppliersController.cs`](src/Firmeza.API/Controllers/SuppliersController.cs): *La mesa de convenios con fábricas*. Gestión de proveedores y fabricantes mayoristas.
-* [`PaymentMethodsController.cs`](src/Firmeza.API/Controllers/PaymentMethodsController.cs): *La ventanilla de medios de recaudo*. Habilitación y consulta de formas de pago aceptadas.
-* [`DashboardController.cs`](src/Firmeza.API/Controllers/DashboardController.cs): *La pantalla de indicadores gerenciales*. Resumen consolidado para la dirección general.
-* [`UsersController.cs`](src/Firmeza.API/Controllers/UsersController.cs): *La oficina de talento humano y credenciales*. Consulta de usuarios registrados y roles de Identity.
+#### 📁 `Controllers/` (Los 13 Asesores Comerciales en Mostrador)
+* *Analogía General:* Cada asesor atiende una ventanilla identificada con un letrero luminoso según su especialidad:
+* [`AuthController.cs`](src/Firmeza.API/Controllers/AuthController.cs): *Ventanilla de recepción y carnetización*. Atiende `/login` para autenticar usuarios y `/register` para dar de alta clientes nuevos.
+* [`CategoriesController.cs`](src/Firmeza.API/Controllers/CategoriesController.cs): *Directorio del centro comercial*. Consulta de las 20 familias, conteo de productos por línea y activación/desactivación.
+* [`ClientsController.cs`](src/Firmeza.API/Controllers/ClientsController.cs): *Atención a empresas y constructores*. Registro de clientes, cálculo de edad y consultas de cartera.
+* [`DashboardController.cs`](src/Firmeza.API/Controllers/DashboardController.cs): *Pantalla de indicadores gerenciales*. Resumen consolidado para la dirección general (`/summary`).
+* [`DispatchesController.cs`](src/Firmeza.API/Controllers/DispatchesController.cs): *Oficina de fletes y logística*. Programación de envíos a pie de obra y actualización de estados (`EnRuta`, `Entregado`).
+* [`InventoryMovementsController.cs`](src/Firmeza.API/Controllers/InventoryMovementsController.cs): *Taquilla de auditoría de inventario*. Consulta histórica de entradas, salidas y ajustes de stock.
+* [`PaymentMethodsController.cs`](src/Firmeza.API/Controllers/PaymentMethodsController.cs): *Ventanilla de medios de recaudo*. Habilitación y consulta de formas de pago aceptadas.
+* [`ProductsController.cs`](src/Firmeza.API/Controllers/ProductsController.cs): *Mostrador de materiales y herramientas*. Catálogo, creación, actualización, soft-delete e importación/exportación masiva en Excel.
+* [`RentalsController.cs`](src/Firmeza.API/Controllers/RentalsController.cs): *Mesa de contratos de arrendamiento de maquinaria*. Firma de contratos por días y liberación automática del equipo al terminar.
+* [`SalesController.cs`](src/Firmeza.API/Controllers/SalesController.cs): *Caja registradora principal*. Cobro de compras, emisión automática de factura PDF, anulación y exportación histórica a Excel.
+* [`SuppliersController.cs`](src/Firmeza.API/Controllers/SuppliersController.cs): *Mesa de convenios con fábricas*. Gestión de proveedores y fabricantes mayoristas.
+* [`UsersController.cs`](src/Firmeza.API/Controllers/UsersController.cs): *Oficina de talento humano y credenciales*. Consulta de usuarios registrados y roles de Identity.
+* [`VehiclesController.cs`](src/Firmeza.API/Controllers/VehiclesController.cs): *Patio de exhibición de maquinaria*. Catálogo de volquetas, retroexcavadoras y camiones con tarifas de alquiler por día.
 
-#### 📁 `Middleware/` (El Inspector de Calidad y Protocolo en Ventanilla)
-* *Analogía:* El jefe de atención al cliente que observa detrás de las ventanillas: si un asesor tropieza o el cliente pide algo imposible, el inspector interviene cortésmente, redacta una nota estandarizada según la norma de calidad (RFC 7807 ProblemDetails) y se la entrega al cliente explicándole qué ocurrió sin gritar ni revelar los secretos internos de la bodega.
-* [`GlobalExceptionHandlerMiddleware.cs`](src/Firmeza.API/Middleware/GlobalExceptionHandlerMiddleware.cs): Intercepta excepciones de cualquier capa y devuelve una respuesta estructurada con `Status`, `Title`, `Detail` e `Instance`:
-  * `ValidationException` / `ValorInvalidoException` -> **HTTP 400 Bad Request**
-  * `ForbiddenAccessException` -> **HTTP 403 Forbidden**
-  * `NotFoundException` -> **HTTP 404 Not Found**
-  * `ConflictException` / `ReglaNegocioException` -> **HTTP 409 Conflict**
-  * `StockInsuficienteException` -> **HTTP 422 Unprocessable Entity**
-  * Errores no controlados -> **HTTP 500 Internal Server Error**
-
-#### 📄 `Program.cs` (El Maestro de Ceremonias y Protocolo de Apertura)
-* *Analogía:* El gerente general que llega al amanecer, abre las rejas del edificio, enciende las luces, activa los detectores de humo, conecta el sistema de sonido y declara oficialmente inaugurada la atención al público.
-* Inicializa el host, inyecta Application e Infrastructure, activa CORS para clientes móviles/web, autenticación JWT Bearer, documentación interactiva en **Swagger UI** y **Scalar API**, endpoints de bienvenida en `GET /` y `GET /api`, y ejecuta la siembra inicial con `DbSeeder`.
+#### 📁 `Middleware/` & Archivos de Configuración
+* [`GlobalExceptionHandlerMiddleware.cs`](src/Firmeza.API/Middleware/GlobalExceptionHandlerMiddleware.cs): *El inspector de protocolo y calidad*. Traduce excepciones a respuestas estandarizadas bajo **RFC 7807 ProblemDetails** (400, 403, 404, 409, 422, 500).
+* [`Program.cs`](src/Firmeza.API/Program.cs): *El maestro de ceremonias*. Configura DI, CORS, autenticación JWT, documentación dual en **Swagger UI** y **Scalar API**, endpoints de bienvenida en `GET /` y `GET /api`, y ejecuta la siembra inicial con `DbSeeder`.
+* [`Firmeza.API.http`](src/Firmeza.API/Firmeza.API.http): *La carpeta de pruebas rápidas*. Colección de peticiones HTTP para probar flujos completos directamente en VS Code o Rider.
+* [`appsettings.json`](src/Firmeza.API/appsettings.json) & [`appsettings.Development.json`](src/Firmeza.API/appsettings.Development.json): *La caja fuerte de configuración*. Almacena la cadena de conexión a PostgreSQL, credenciales JWT y parámetros SMTP.
+* [`Properties/launchSettings.json`](src/Firmeza.API/Properties/launchSettings.json): *El selector de puertas de acceso*. Define el perfil HTTP (puerto 5125 con binding `0.0.0.0` para móviles) y el perfil HTTPS seguro (puerto 7049).
+* `wwwroot/recibos/.gitkeep`: *El archivo de custodia física*. Carpeta donde se almacenan físicamente las facturas comerciales generadas en formato PDF.
 
 ---
 
@@ -415,24 +509,22 @@ src/Firmeza.API/
 > 🔬 **Analogía:** *El Laboratorio de Control de Calidad y Ensayos Sísmicos Destructivos*.  
 > **Propósito Técnico:** Suite automatizada con xUnit, Moq y FluentAssertions. Somete el software a cargas extremas y situaciones límite para garantizar 100% de fiabilidad y cero regresiones.
 
-| Archivo de Prueba | 💡 Analogía de Ensayo en Laboratorio | 🎯 Componente Técnico Evaluado | Pruebas |
-| :--- | :--- | :--- | :---: |
-| [`DomainDddTests.cs`](tests/Firmeza.Tests/DomainDddTests.cs) | *El calibrador láser de instrumentos*: Comprueba que el Dinero no acepte centavos negativos, que las Placas sigan la norma y los SKUs no admitan espacios. | Value Objects (`Dinero`, `CodigoSku`, `Email`, `Nit`, `Placa`, `Telefono`), 3 E, Enums y Abstracciones | 20 |
-| [`CommercialDomainTests.cs`](tests/Firmeza.Tests/CommercialDomainTests.cs) | *La prueba de carga de camiones*: Verifica que los contratos de alquiler calculen bien los días, los fletes cambien de estado en orden y el Kardex cuadre cada variación. | Entidades satélites (`Categoria`, `Vehiculo`, `Alquiler`, `Despacho`, `MovimientoInventario`) | 14 |
-| [`DomainEntityTests.cs`](tests/Firmeza.Tests/DomainEntityTests.cs) | *La prueba de estrés de stock*: Simula compras masivas para verificar que el stock jamás quede negativo y el IVA del 19% se liquide al milímetro. | Reglas e invariantes de `Producto` y `Venta` | 6 |
-| [`VentaServiceTests.cs`](tests/Firmeza.Tests/VentaServiceTests.cs) | *El simulacro de colapso de caja*: Prueba compras atómicas con rollback si algo falla, anulación de facturas y recarga automática de existencias. | Casos de uso de facturación, transaccionalidad ACID y reversión | 8 |
-| [`ProductoServiceTests.cs`](tests/Firmeza.Tests/ProductoServiceTests.cs) | *La auditoría de pasillos*: Evalúa altas de materiales, alertas de stock bajo y desactivación lógica (*Soft Delete*). | Casos de uso de catálogo, stock y desactivación | 6 |
-| [`ClienteServiceTests.cs`](tests/Firmeza.Tests/ClienteServiceTests.cs) | *El filtro de admisiones*: Evalúa el cálculo de edad y rechaza de inmediato clientes con cédulas o correos repetidos. | Cartera de clientes, unicidad y edad | 6 |
-| [`DesnormalizedExcelTests.cs`](tests/Firmeza.Tests/DesnormalizedExcelTests.cs) | *La trituradora de planillas*: Carga hojas de Excel complejas y comprueba que se normalicen en memoria sin corromper la base de datos. | Importación masiva desnormalizada con EPPlus 8 | 4 |
-| [`EmailServiceTests.cs`](tests/Firmeza.Tests/EmailServiceTests.cs) | *El ensayo del telégrafo postal*: Comprueba que las plantillas HTML se armen correctamente y los adjuntos PDF no se dañen al enviar. | Plantillas HTML y despacho SMTP con adjuntos | 3 |
-| [`GlobalExceptionHandlerMiddlewareTests.cs`](tests/Firmeza.Tests/GlobalExceptionHandlerMiddlewareTests.cs) | *El simulacro de quejas en ventanilla*: Lanza fallas intencionales para verificar que el middleware responda con el código HTTP exacto bajo RFC 7807. | Mapeo HTTP de excepciones a ProblemDetails | 6 |
-| [`ApplicationExceptionsTests.cs`](tests/Firmeza.Tests/ApplicationExceptionsTests.cs) | *La calibración de sellos de rechazo*: Valida que `NotFound`, `Conflict`, `Validation` y `Forbidden` lleven mensajes claros. | Excepciones tipadas de aplicación | 4 |
-| [`AutoMapperTests.cs`](tests/Firmeza.Tests/AutoMapperTests.cs) | *El examen del perito traductor*: Valida que ninguna propiedad de los DTOs quede huérfana o mal mapeada desde las entidades. | Mapeos DTO <-> Entidad en MappingProfile | 3 |
-| [`ProductsControllerTests.cs`](tests/Firmeza.Tests/ProductsControllerTests.cs) | *El comprador incógnito en productos*: Envía peticiones HTTP simuladas y valida respuestas 200 OK, 201 Created y 404 Not Found. | Endpoints REST de catálogo de productos | 5 |
-| [`SalesControllerTests.cs`](tests/Firmeza.Tests/SalesControllerTests.cs) | *El comprador incógnito en la caja*: Prueba compras, anulaciones y solicitudes de comprobantes PDF. | Endpoints REST de facturación y ventas | 5 |
-| [`DashboardControllerTests.cs`](tests/Firmeza.Tests/DashboardControllerTests.cs) | *La auditoría de la pantalla de junta directiva*: Verifica que los KPIs reportados coincidan con las ventas reales. | Endpoint REST de métricas del Dashboard | 3 |
-| [`DependencyInjectionTests.cs`](tests/Firmeza.Tests/DependencyInjectionTests.cs) | *La prueba de cableado eléctrico general*: Confirma que todos los servicios y repositorios se resuelvan sin cables sueltos en el contenedor IoC. | Resolución de dependencias en IServiceCollection | 2 |
-| **Total** | **Certificación de Resistencia Sísmica del Software** | **Suite Completa de Pruebas Unitarias** | **95 Aprobadas (100%)** |
+* [`DomainDddTests.cs`](tests/Firmeza.Tests/DomainDddTests.cs) (20 pruebas): *El calibrador láser de instrumentos*. Comprueba que el Dinero no acepte centavos negativos, que las Placas sigan la norma y los SKUs no admitan espacios.
+* [`CommercialDomainTests.cs`](tests/Firmeza.Tests/CommercialDomainTests.cs) (14 pruebas): *La prueba de carga de camiones*. Verifica que los contratos de alquiler calculen bien los días, los fletes cambien de estado en orden y el Kardex cuadre cada variación.
+* [`DomainEntityTests.cs`](tests/Firmeza.Tests/DomainEntityTests.cs) (6 pruebas): *La prueba de estrés de stock*. Simula compras masivas para verificar que el stock jamás quede negativo y el IVA del 19% se liquide al milímetro.
+* [`VentaServiceTests.cs`](tests/Firmeza.Tests/VentaServiceTests.cs) (8 pruebas): *El simulacro de colapso de caja*. Prueba compras atómicas con rollback si algo falla, anulación de facturas y recarga automática de existencias.
+* [`ProductoServiceTests.cs`](tests/Firmeza.Tests/ProductoServiceTests.cs) (6 pruebas): *La auditoría de pasillos*. Evalúa altas de materiales, alertas de stock bajo y desactivación lógica (*Soft Delete*).
+* [`ClienteServiceTests.cs`](tests/Firmeza.Tests/ClienteServiceTests.cs) (6 pruebas): *El filtro de admisiones*. Evalúa el cálculo de edad y rechaza de inmediato clientes con cédulas o correos repetidos.
+* [`DesnormalizedExcelTests.cs`](tests/Firmeza.Tests/DesnormalizedExcelTests.cs) (4 pruebas): *La trituradora de planillas*. Carga hojas de Excel complejas y comprueba que se normalicen en memoria sin corromper la base de datos.
+* [`EmailServiceTests.cs`](tests/Firmeza.Tests/EmailServiceTests.cs) (3 pruebas): *El ensayo del telégrafo postal*. Comprueba que las plantillas HTML se armen correctamente y los adjuntos PDF no se dañen al enviar.
+* [`GlobalExceptionHandlerMiddlewareTests.cs`](tests/Firmeza.Tests/GlobalExceptionHandlerMiddlewareTests.cs) (6 pruebas): *El simulacro de quejas en ventanilla*. Lanza fallas intencionales para verificar que el middleware responda con el código HTTP exacto bajo RFC 7807.
+* [`ApplicationExceptionsTests.cs`](tests/Firmeza.Tests/ApplicationExceptionsTests.cs) (4 pruebas): *La calibración de sellos de rechazo*. Valida que `NotFound`, `Conflict`, `Validation` y `Forbidden` lleven mensajes claros.
+* [`AutoMapperTests.cs`](tests/Firmeza.Tests/AutoMapperTests.cs) (3 pruebas): *El examen del perito traductor*. Valida que ninguna propiedad de los DTOs quede huérfana o mal mapeada desde las entidades.
+* [`ProductsControllerTests.cs`](tests/Firmeza.Tests/ProductsControllerTests.cs) (5 pruebas): *El comprador incógnito en productos*. Envía peticiones HTTP simuladas y valida respuestas 200 OK, 201 Created y 404 Not Found.
+* [`SalesControllerTests.cs`](tests/Firmeza.Tests/SalesControllerTests.cs) (5 pruebas): *El comprador incógnito en la caja*. Prueba compras, anulaciones y solicitudes de comprobantes PDF.
+* [`DashboardControllerTests.cs`](tests/Firmeza.Tests/DashboardControllerTests.cs) (3 pruebas): *La auditoría de la pantalla de junta directiva*. Verifica que los KPIs reportados coincidan con las ventas reales.
+* [`DependencyInjectionTests.cs`](tests/Firmeza.Tests/DependencyInjectionTests.cs) (2 pruebas): *La prueba de cableado eléctrico general*. Confirma que todos los servicios y repositorios se resuelvan sin cables sueltos en el contenedor IoC.
+* [`Firmeza.Tests.csproj`](tests/Firmeza.Tests/Firmeza.Tests.csproj): Definición del proyecto de pruebas con xUnit, Moq y FluentAssertions.
 
 ---
 
@@ -447,11 +539,12 @@ src/Firmeza.API/
 
 ---
 
-### 7. 📱 Bitácora de la Nueva Sucursal Digital: `TAREAS_AZURE_US5.md`
+### 7. 📁 Archivos Raíz y Documentación Satélite
 
-> 📲 **Analogía:** *El Cronograma de Construcción del Centro Comercial Digital*.  
-> **Propósito Técnico:** Documenta la construcción de la sucursal virtual para que los constructores y clientes finales puedan comprar materiales y alquilar maquinaria pesada directamente desde su celular (Android/iOS) o navegador web mediante **Expo, React Native, Tailwind CSS (NativeWind) y Expo Router** (ubicado en `Firmeza.app/Firmeza`), registrando el progreso para el tablero de control de Azure DevOps.
-
+* [`Firmeza.sln`](Firmeza.sln): *El plano arquitectónico maestro*. Archivo de solución maestro de .NET 10 que enlaza los cinco proyectos de la solución (`Domain`, `Application`, `Infrastructure`, `API` y `Tests`).
+* [`TAREAS_AZURE_US5.md`](TAREAS_AZURE_US5.md): *El cronograma de obra de la nueva sucursal digital*. Documenta las tareas para Azure Boards de la aplicación móvil y web construida en Expo / React Native ubicada en `Firmeza.app/Firmeza`.
+* [`README.md`](README.md): *La enciclopedia viva de la empresa*. Documentación técnica integral, guía de instalación, catálogo de endpoints y mapas de responsabilidades.
+* [`.gitignore`](.gitignore): *El contenedor de escombros de la obra*. Instruye a Git para ignorar archivos temporales de compilación (`bin/`, `obj/`), cachés locales de IDEs (`.idea/`, `.vscode/`) y secretos.
 
 ---
 
