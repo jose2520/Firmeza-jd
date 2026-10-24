@@ -1,20 +1,6 @@
-// =================================================================================================
-// SERVICIO: DashboardService.cs
-// CAPA: Firmeza.Infrastructure (Capa de Infraestructura y Persistencia)
-// CONTRATO: IDashboardService (Firmeza.Application)
-// PROPÓSITO:
-//   Calcula las métricas de inteligencia comercial agregadas en tiempo real para el Panel de Control.
-//
-// ORIGEN Y DESTINO DE LOS DATOS:
-//   - Todos los cálculos se realizan a partir de la base de datos PostgreSQL:
-//     * Clientes activos: 'SELECT COUNT(*) FROM clientes WHERE activo = true'
-//     * Productos activos: 'SELECT COUNT(*) FROM productos WHERE activo = true'
-//     * Ventas totales e ingresos acumulados: Agregaciones sobre 'ventas WHERE estado = Completada'
-//     * Ventas e ingresos de hoy: Filtro por rango de fecha actual UTC
-//     * Alerta de stock crítico: 'productos WHERE activo = true AND stock <= 20'
-//     * Top 5 más vendidos: 'detalles_venta' agrupados en memoria por producto
-// =================================================================================================
-
+// Servicio que calcula los resúmenes y estadísticas para el panel principal de administración.
+// Consulta las tablas "clientes", "productos", "ventas" y "detalles_venta" en la base de datos.
+// Obtiene el total de clientes, ingresos, ventas del día, productos con poco stock y los más vendidos.
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
 using Firmeza.Infrastructure.Persistence;
@@ -26,27 +12,25 @@ public class DashboardService : IDashboardService
 {
     private readonly ApplicationDbContext _context;
 
+    // Inicializa el servicio del panel de control con la conexión a la base de datos.
     public DashboardService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    /// <summary>
-    /// Ejecuta las consultas y agrupaciones para consolidar los KPIs comerciales.
-    /// ORIGEN DE DATOS: PostgreSQL ('clientes', 'productos', 'ventas', 'detalles_venta').
-    /// </summary>
+    // Reúne todas las cifras de clientes, productos, ventas totales, ventas de hoy y alertas de inventario.
     public async Task<DashboardSummaryDto> GetSummaryAsync()
     {
-        // 1. Conteo de entidades activas
+        // 1. Conteo de clientes y productos activos
         var totalClientes = await _context.Clientes.CountAsync(c => c.Activo);
         var totalProductos = await _context.Productos.CountAsync(p => p.Activo);
 
-        // 2. Acumulados históricos de ventas completadas
+        // 2. Totales históricos de ventas completadas
         var ventasCompletadas = _context.Ventas.Where(v => v.Estado == "Completada");
         var totalVentas = await ventasCompletadas.CountAsync();
         var totalIngresos = await ventasCompletadas.SumAsync(v => (decimal?)v.Total) ?? 0m;
 
-        // 3. Ventas e ingresos facturados en el día actual (rango de 00:00 a 23:59 UTC)
+        // 3. Ventas e ingresos facturados en el día actual
         var hoy = DateTime.UtcNow.Date;
         var manana = hoy.AddDays(1);
 
@@ -67,21 +51,11 @@ public class DashboardService : IDashboardService
                 p.Precio))
             .ToListAsync();
 
-        // 5. Top 5 productos con mayor rotación de ventas
-        var detalles = await _context.DetallesVenta
+        // 5. Top 5 productos más vendidos
+        var topProductos = await _context.DetallesVenta
+            .AsNoTracking()
             .Where(d => d.Venta.Estado == "Completada")
-            .Select(d => new
-            {
-                d.ProductoId,
-                d.Producto.Codigo,
-                d.Producto.Nombre,
-                d.Cantidad,
-                d.Subtotal
-            })
-            .ToListAsync();
-
-        var topProductos = detalles
-            .GroupBy(d => new { d.ProductoId, d.Codigo, d.Nombre })
+            .GroupBy(d => new { d.ProductoId, d.Producto.Codigo, d.Producto.Nombre })
             .Select(g => new TopProductoVendidoDto(
                 g.Key.ProductoId,
                 g.Key.Codigo,
@@ -90,7 +64,7 @@ public class DashboardService : IDashboardService
                 g.Sum(x => x.Subtotal)))
             .OrderByDescending(x => x.TotalUnidadesVendidas)
             .Take(5)
-            .ToList();
+            .ToListAsync();
 
         return new DashboardSummaryDto(
             totalClientes,

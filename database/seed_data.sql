@@ -1,25 +1,11 @@
--- =============================================================================
--- BASE DE DATOS: firmeza_db (Motor: PostgreSQL 14+)
--- PROPOSITO:
---   Script DML (Data Manipulation Language) para poblar la base de datos con
---   datos completos y realistas para todos los módulos de la plataforma Firmeza.
---
--- ORIGEN DE LOS DATOS Y ORDEN DE EJECUCIÓN:
---   1. Debe ejecutarse DESPUÉS de haber ejecutado 'database/schema.sql'.
---   2. Proporciona datos para Identity (Roles, Usuarios, Claims).
---   3. Proporciona datos completos para las 11 tablas del dominio comercial y logístico:
---      - 10 Categorías de ferretería y construcción
---      - 10 Proveedores y fabricantes aliados
---      - 6 Métodos de pago
---      - 13 Clientes (con usuarios de acceso en AspNetUsers y rol Cliente)
---      - 15 Productos de construcción catalogados
---      - 10 Vehículos y maquinaria pesada
---      - 12 Ventas con factura
---      - 18 Detalles de venta
---      - 6 Despachos a pie de obra
---      - 10 Movimientos de inventario (Kardex)
---      - 8 Contratos de alquiler de vehículos y maquinaria
--- =============================================================================
+-- Archivo: seed_data.sql (Base de datos PostgreSQL: firmeza_db)
+-- Propósito: Llena la base de datos con información de ejemplo lista para probar el sistema.
+-- Orden de uso:
+--   1. Se ejecuta después de haber creado las tablas con 'database/schema.sql'.
+--   2. Registra los roles de trabajo y las cuentas de usuarios de prueba.
+--   3. Inserta 20 categorías, 10 proveedores, 6 formas de pago, 13 clientes,
+--      15 productos de ferretería, 10 vehículos y máquinas, 12 ventas con sus
+--      detalles, 6 envíos a obra, 10 movimientos de bodega y 8 alquileres.
 
 BEGIN;
 

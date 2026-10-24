@@ -1,26 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+// Repositorio encargado de consultar y guardar facturas en la tabla "ventas".
+// También une los datos de las tablas "clientes", "metodos_pago", "detalles_venta", "productos" y "despachos".
+// Permite buscar ventas con todos sus detalles por número o ID, por cliente o entre dos fechas.
 using Firmeza.Domain.Abstractions;
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Implementación de repositorio para la entidad Venta.
-/// </summary>
 public class VentaRepository : GenericRepository<Venta>, IVentaRepository
 {
+    // Inicializa el repositorio de ventas con la conexión a la base de datos.
     public VentaRepository(ApplicationDbContext context) : base(context)
     {
     }
 
+    // Busca una venta por su número de factura incluyendo cliente, método de pago, productos vendidos y despacho.
     public async Task<Venta?> GetByNumeroVentaAsync(string numeroVenta, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        return await DbSet
             .Include(v => v.Cliente)
             .Include(v => v.MetodoPago)
             .Include(v => v.DetallesVenta)
@@ -29,9 +26,10 @@ public class VentaRepository : GenericRepository<Venta>, IVentaRepository
             .FirstOrDefaultAsync(v => v.NumeroVenta == numeroVenta, cancellationToken);
     }
 
+    // Busca una venta por su ID incluyendo toda la información del cliente, pago, productos y despacho.
     public async Task<Venta?> GetVentaConDetallesAsync(int ventaId, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        return await DbSet
             .Include(v => v.Cliente)
             .Include(v => v.MetodoPago)
             .Include(v => v.DetallesVenta)
@@ -40,9 +38,10 @@ public class VentaRepository : GenericRepository<Venta>, IVentaRepository
             .FirstOrDefaultAsync(v => v.Id == ventaId, cancellationToken);
     }
 
+    // Obtiene todas las compras realizadas por un cliente específico, ordenadas desde la más reciente.
     public async Task<IReadOnlyList<Venta>> GetVentasByClienteAsync(int clienteId, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        return await DbSet
             .AsNoTracking()
             .Include(v => v.MetodoPago)
             .Where(v => v.ClienteId == clienteId)
@@ -50,12 +49,13 @@ public class VentaRepository : GenericRepository<Venta>, IVentaRepository
             .ToListAsync(cancellationToken);
     }
 
+    // Obtiene las ventas registradas dentro de un rango de fechas incluyendo el cliente y el método de pago.
     public async Task<IReadOnlyList<Venta>> GetVentasByRangoFechasAsync(
         DateTime fechaInicio,
         DateTime fechaFin,
         CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        return await DbSet
             .AsNoTracking()
             .Include(v => v.Cliente)
             .Include(v => v.MetodoPago)

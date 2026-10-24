@@ -1,72 +1,48 @@
+// Archivo: UnidadMedida.cs
+// Define las unidades en las que se pesan, miden y venden los materiales de construcción.
+// Sirve para saber si un producto se factura por bulto, metro, kilo, galón o unidad.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Unidades de medida estándar para inventario, pesaje y comercialización de materiales de construcción.
-/// </summary>
+// Unidades de medida utilizadas en el catálogo para controlar el inventario y las ventas.
 public enum UnidadMedida
 {
-    /// <summary>
-    /// Unidad individual (herramientas, accesorios, bloques).
-    /// </summary>
+    // Pieza individual como herramientas, accesorios, ladrillos o bloques.
     Unidad = 1,
 
-    /// <summary>
-    /// Bulto (cemento 50kg, cal, yeso, pegantes).
-    /// </summary>
+    // Saco o bolsa empacada como cemento de 50 kg, cal, yeso o pegante cerámico.
     Bulto = 2,
 
-    /// <summary>
-    /// Kilogramo (alambre, clavos a granel).
-    /// </summary>
+    // Peso en kilos para productos vendidos al destajo como alambre o puntillas.
     Kilogramo = 3,
 
-    /// <summary>
-    /// Tonelada métrica (acero figurado, agregados en gran volumen).
-    /// </summary>
+    // Peso de mil kilos para compras grandes de acero o agregados.
     Tonelada = 4,
 
-    /// <summary>
-    /// Metro lineal (tuberías, mangueras, perfiles).
-    /// </summary>
+    // Medida de longitud para mangueras, perfiles o cables vendidos por metro lineal.
     Metro = 5,
 
-    /// <summary>
-    /// Metro cuadrado (drywall, tejas, enchapes, pisos).
-    /// </summary>
+    // Medida de superficie para pisos, enchapes, tejas o láminas de drywall.
     MetroCuadrado = 6,
 
-    /// <summary>
-    /// Metro cúbico (arena lavada, triturado, concreto premezclado).
-    /// </summary>
+    // Medida de volumen para arena lavada, grava triturada o concreto premezclado.
     MetroCubico = 7,
 
-    /// <summary>
-    /// Galón (pinturas, impermeabilizantes, aditivos).
-    /// </summary>
+    // Envase de 3.78 litros usado en pinturas, impermeabilizantes y aditivos.
     Galon = 8,
 
-    /// <summary>
-    /// Litro (solventes, desmoldantes, aditivos líquidos).
-    /// </summary>
+    // Medida líquida para solventes, thinner o aditivos químicos pequeños.
     Litro = 9,
 
-    /// <summary>
-    /// Varilla de 6 o 12 metros (varilla corrugada de hierro/acero).
-    /// </summary>
+    // Barra completa de hierro o acero corrugado de 6 o 12 metros de largo.
     Varilla = 10,
 
-    /// <summary>
-    /// Rollo (malla electrosoldada, geomembrana, cable eléctrico).
-    /// </summary>
+    // Presentación enrollada para mallas electrosoldadas, plástico negro o cables.
     Rollo = 11,
 
-    /// <summary>
-    /// Caja (tornillería, cerraduras, baldosas).
-    /// </summary>
+    // Empaque cerrado que agrupa varias unidades como cajas de tornillos o baldosas.
     Caja = 12,
 
-    /// <summary>
-    /// Tubo de 6 metros (PVC sanitario, conduit, estructural).
-    /// </summary>
+    // Tramo completo de tubería de 6 metros para agua, luz o alcantarillado.
     Tubo = 13
 }

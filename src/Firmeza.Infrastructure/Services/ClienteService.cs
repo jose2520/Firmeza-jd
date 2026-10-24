@@ -1,19 +1,6 @@
-// =================================================================================================
-// SERVICIO: ClienteService.cs
-// CAPA: Firmeza.Infrastructure (Capa de Infraestructura y Persistencia)
-// CONTRATO: IClienteService (Firmeza.Application)
-// PROPÓSITO:
-//   Implementa las operaciones CRUD sobre la cartera de clientes:
-//   - Listado y consulta por ID.
-//   - Registro con validación de unicidad en Identificación (Cédula/NIT) y Correo Electrónico.
-//   - Actualización de datos de contacto.
-//   - Borrado inteligente: Eliminación física si el cliente no tiene compras, o desactivación
-//     lógica (Activo = false) si posee historial de ventas para preservar la integridad referencial.
-//
-// ORIGEN Y DESTINO DE LOS DATOS:
-//   - Base de Datos Relacional: PostgreSQL (tabla 'clientes' y consulta en 'ventas').
-// =================================================================================================
-
+// Servicio que gestiona la creación, consulta, actualización y eliminación de clientes.
+// Trabaja principalmente con la tabla "clientes" de PostgreSQL y consulta las tablas "ventas" y "alquileres"
+// para decidir si un cliente se puede borrar por completo o solo desactivar para no perder su historial.
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
 using Firmeza.Domain.Entities;
@@ -26,15 +13,13 @@ public class ClienteService : IClienteService
 {
     private readonly ApplicationDbContext _context;
 
+    // Inicializa el servicio de clientes con la conexión a la base de datos.
     public ClienteService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    /// <summary>
-    /// Lista todos los clientes registrados ordenados por ID.
-    /// ORIGEN DE DATOS: PostgreSQL (tabla 'clientes').
-    /// </summary>
+    // Obtiene la lista de todos los clientes registrados en la tabla "clientes", ordenados por su ID.
     public async Task<IEnumerable<ClienteDto>> GetAllAsync()
     {
         return await _context.Clientes
@@ -55,10 +40,7 @@ public class ClienteService : IClienteService
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Consulta un cliente por su clave primaria.
-    /// ORIGEN DE DATOS: PostgreSQL (tabla 'clientes' donde id = {id}).
-    /// </summary>
+    // Busca y devuelve los datos de un cliente específico según su ID en la tabla "clientes".
     public async Task<ClienteDto?> GetByIdAsync(int id)
     {
         var c = await _context.Clientes.FindAsync(id);
@@ -78,10 +60,7 @@ public class ClienteService : IClienteService
             c.Edad);
     }
 
-    /// <summary>
-    /// Crea un nuevo cliente validando que no exista duplicidad de Identificación ni Email.
-    /// ORIGEN DE DATOS: Insertado en PostgreSQL (tabla 'clientes').
-    /// </summary>
+    // Registra un nuevo cliente en la tabla "clientes" tras verificar que su documento y correo no estén repetidos.
     public async Task<ClienteDto> CreateAsync(CreateClienteDto dto)
     {
         if (dto.Edad.HasValue && dto.Edad.Value < 0)
@@ -89,8 +68,9 @@ public class ClienteService : IClienteService
             throw new InvalidOperationException("La edad del cliente no puede ser un número negativo.");
         }
 
+        var identificacionNormalizada = dto.Identificacion.Trim();
         var identificacionExistente = await _context.Clientes
-            .AnyAsync(c => c.Identificacion == dto.Identificacion);
+            .AnyAsync(c => c.Identificacion == identificacionNormalizada);
 
         if (identificacionExistente)
         {
@@ -99,8 +79,9 @@ public class ClienteService : IClienteService
 
         if (!string.IsNullOrWhiteSpace(dto.Email))
         {
+            var emailNormalizado = dto.Email.Trim().ToLower();
             var emailExistente = await _context.Clientes
-                .AnyAsync(c => c.Email == dto.Email);
+                .AnyAsync(c => c.Email.ToLower() == emailNormalizado);
 
             if (emailExistente)
             {
@@ -110,7 +91,7 @@ public class ClienteService : IClienteService
 
         var cliente = new Cliente
         {
-            Identificacion = dto.Identificacion.Trim(),
+            Identificacion = identificacionNormalizada,
             Nombres = dto.Nombres.Trim(),
             Apellidos = dto.Apellidos.Trim(),
             Email = (dto.Email ?? string.Empty).Trim(),
@@ -139,10 +120,7 @@ public class ClienteService : IClienteService
             cliente.Edad);
     }
 
-    /// <summary>
-    /// Actualiza los datos de un cliente existente.
-    /// ORIGEN DE DATOS: Modifica la fila en PostgreSQL (tabla 'clientes').
-    /// </summary>
+    // Actualiza la información personal y de contacto de un cliente existente en la tabla "clientes".
     public async Task<ClienteDto?> UpdateAsync(int id, UpdateClienteDto dto)
     {
         if (dto.Edad.HasValue && dto.Edad.Value < 0)
@@ -155,8 +133,9 @@ public class ClienteService : IClienteService
 
         if (!string.IsNullOrWhiteSpace(dto.Email))
         {
+            var emailNormalizado = dto.Email.Trim().ToLower();
             var emailExistente = await _context.Clientes
-                .AnyAsync(c => c.Email == dto.Email && c.Id != id);
+                .AnyAsync(c => c.Email.ToLower() == emailNormalizado && c.Id != id);
 
             if (emailExistente)
             {
@@ -189,18 +168,15 @@ public class ClienteService : IClienteService
             cliente.Edad);
     }
 
-    /// <summary>
-    /// Elimina un cliente. Si tiene ventas asociadas, se realiza un borrado lógico (desactivación: Activo = false)
-    /// para proteger la integridad referencial y el historial financiero en la base de datos.
-    /// ORIGEN DE DATOS: PostgreSQL (evalúa existencia en 'ventas', modifica o elimina en 'clientes').
-    /// </summary>
+    // Elimina al cliente si no tiene compras ni alquileres; si ya tiene historial, solo lo marca como inactivo.
     public async Task<bool> DeleteAsync(int id)
     {
         var cliente = await _context.Clientes.FindAsync(id);
         if (cliente == null) return false;
 
-        var tieneVentas = await _context.Ventas.AnyAsync(v => v.ClienteId == id);
-        if (tieneVentas)
+        var tieneHistorial = await _context.Ventas.AnyAsync(v => v.ClienteId == id)
+                          || await _context.Alquileres.AnyAsync(a => a.ClienteId == id);
+        if (tieneHistorial)
         {
             cliente.Activo = false;
         }

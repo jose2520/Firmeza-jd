@@ -1,18 +1,6 @@
-// =================================================================================================
-// CONTROLADOR: DashboardController.cs
-// CAPA: Firmeza.API (Presentación / Controladores HTTP)
-// RUTA BASE: /api/Dashboard
-// PROPÓSITO:
-//   Suministra métricas agregadas y estadísticas de ventas en tiempo real para alimentar
-//   las tarjetas y gráficas del Panel de Control (Dashboard) del Frontend.
-//
-// ORIGEN DE LOS DATOS:
-//   - Consultas agregadas calculadas directamente sobre la base de datos PostgreSQL:
-//     * Conteo de filas activas en 'clientes' y 'productos'.
-//     * Suma y conteo de 'ventas' completadas en el histórico y en el día actual (UTC).
-//     * Filtro de stock bajo (<= 20 unidades) en la tabla 'productos'.
-//     * Agrupación (GroupBy) y ordenamiento sobre 'detalles_venta' para obtener el Top 5 más vendido.
-// =================================================================================================
+// Controlador que entrega las estadísticas y resúmenes para el panel de control principal.
+// Reúne datos de ventas, ingresos, clientes, productos con pocas existencias
+// y los artículos más vendidos para mostrarlos en pantalla.
 
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
@@ -23,21 +11,18 @@ namespace Firmeza.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Requiere autenticación con token JWT
+[Authorize(Roles = "Admin,Supervisor,Gerente,Vendedor,Contador,Auditor")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
 
+    // Recibe el servicio encargado de calcular las estadísticas comerciales.
     public DashboardController(IDashboardService dashboardService)
     {
         _dashboardService = dashboardService;
     }
 
-    /// <summary>
-    /// Retorna el resumen consolidado de indicadores clave (KPIs) comerciales.
-    /// ACCESO: Autenticado.
-    /// ORIGEN DE DATOS: Base de datos PostgreSQL (cálculos en vivo sobre clientes, productos y ventas).
-    /// </summary>
+    // Devuelve el resumen general con los totales de clientes, productos, ingresos, alertas de inventario y productos más vendidos.
     [HttpGet("summary")]
     public async Task<ActionResult<DashboardSummaryDto>> GetSummary()
     {

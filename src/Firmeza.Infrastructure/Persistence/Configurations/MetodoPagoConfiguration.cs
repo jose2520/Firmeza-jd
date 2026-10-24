@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad MetodoPago en la tabla "metodos_pago" de la base de datos.
+// Configura las columnas de código, nombre, descripción y estado activo de cada forma de pago.
+// Asegura que el código de cada método de pago sea único en la tabla.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class MetodoPagoConfiguration : IEntityTypeConfiguration<MetodoPago>
 {
+    // Configura la tabla "metodos_pago", sus columnas y la restricción de código único.
     public void Configure(EntityTypeBuilder<MetodoPago> builder)
     {
         builder.HasKey(e => e.Id).HasName("metodos_pago_pkey");

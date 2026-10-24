@@ -1,27 +1,21 @@
+// Archivo: EstadoDespacho.cs
+// Define las etapas del envío de materiales hacia la obra o dirección del cliente.
+// Sirve para hacer seguimiento al transporte desde que se alista en bodega hasta que se entrega.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Representa el estado del despacho logístico y flete de materiales a pie de obra.
-/// </summary>
+// Estados que muestran el progreso de una entrega de materiales a domicilio o en obra.
 public enum EstadoDespacho
 {
-    /// <summary>
-    /// Despacho programado en espera de cargue en bodega.
-    /// </summary>
+    // El pedido está programado y esperando ser cargado en el vehículo de transporte.
     Pendiente = 1,
 
-    /// <summary>
-    /// Materiales cargados en vehículo y en trayecto hacia la obra de construcción.
-    /// </summary>
+    // Los materiales ya van en el camión camino hacia la obra de construcción.
     EnRuta = 2,
 
-    /// <summary>
-    /// Pedido descargado y recibido a satisfacción por el responsable en obra.
-    /// </summary>
+    // El pedido fue descargado y recibido conforme por el encargado en la obra.
     Entregado = 3,
 
-    /// <summary>
-    /// Entrega cancelada por novedades en la obra o retracto comercial.
-    /// </summary>
+    // El envío fue suspendido por problemas en la entrega o cancelación del pedido.
     Cancelado = 4
 }

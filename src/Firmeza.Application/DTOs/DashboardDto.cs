@@ -1,14 +1,13 @@
+// Archivo: DashboardDto.cs
+// Qué es: Estructuras de datos para el panel principal de estadísticas del negocio.
+// Para qué sirve: Reúne los resúmenes de ventas, ingresos, alertas de pocas unidades y los productos más vendidos para mostrarlos al administrador.
+
 namespace Firmeza.Application.DTOs;
 
-/// <summary>
-/// DTO que representa un producto con existencia crítica o inferior al umbral de seguridad.
-/// 
-/// PARA QUÉ SIRVE:
-///   Alerta al administrador o encargado de compras sobre referencias que requieren reabastecimiento urgente.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Filtrado desde la tabla 'productos' en PostgreSQL (WHERE activo = TRUE AND stock <= 10).
-/// </summary>
+// ReSharper disable NotAccessedPositionalProperty.Global
+
+// Representa un producto que tiene pocas unidades disponibles y necesita comprarse pronto.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record ProductoBajoStockDto(
     int Id,
     string Codigo,
@@ -17,15 +16,8 @@ public record ProductoBajoStockDto(
     decimal Precio
 );
 
-/// <summary>
-/// DTO que representa un producto del ranking de los más vendidos (Top Sellers).
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite conocer los productos de mayor rotación y volumen de facturación para análisis comercial.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Agregación SQL sobre 'detalles_venta' agrupado por 'producto_id' en PostgreSQL.
-/// </summary>
+// Representa un producto destacado dentro de la lista de los que más se han vendido, con sus unidades y dinero recaudado.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record TopProductoVendidoDto(
     int ProductoId,
     string Codigo,
@@ -34,15 +26,8 @@ public record TopProductoVendidoDto(
     decimal TotalMontoGenerado
 );
 
-/// <summary>
-/// DTO consolidado con todos los indicadores gerenciales (KPIs) del Dashboard.
-/// 
-/// PARA QUÉ SIRVE:
-///   Proporciona en una sola llamada HTTP todas las estadísticas necesarias para renderizar el tablero de control.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Cálculo combinado sobre las tablas 'clientes', 'productos', 'ventas' y 'detalles_venta' en PostgreSQL.
-/// </summary>
+// Agrupa todos los números importantes del negocio en un solo paquete para alimentar la pantalla principal de control.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record DashboardSummaryDto(
     int TotalClientes,
     int TotalProductos,
@@ -53,3 +38,5 @@ public record DashboardSummaryDto(
     IEnumerable<ProductoBajoStockDto> ProductosBajoStock,
     IEnumerable<TopProductoVendidoDto> TopProductosVendidos
 );
+
+// ReSharper restore NotAccessedPositionalProperty.Global

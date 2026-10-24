@@ -1,15 +1,10 @@
+// Archivo: ClienteDto.cs
+// Qué es: Estructuras de datos para manejar la información de los clientes.
+// Para qué sirve: Transporta los datos personales y de contacto cuando se consultan, registran o actualizan clientes en el sistema.
+
 namespace Firmeza.Application.DTOs;
 
-/// <summary>
-/// DTO de respuesta para la representación de un cliente hacia los consumidores del API.
-/// 
-/// PARA QUÉ SIRVE:
-///   Transfiere los datos completos de un cliente hacia el frontend o clientes móviles,
-///   ocultando detalles de persistencia interna y evitando referencias circulares.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Proyectado desde la entidad Cliente mapeada en la tabla 'clientes' de PostgreSQL.
-/// </summary>
+// Contiene toda la información de un cliente registrado para mostrarla en pantalla.
 public record ClienteDto(
     int Id,
     string Identificacion,
@@ -24,15 +19,7 @@ public record ClienteDto(
     int? Edad = null
 );
 
-/// <summary>
-/// DTO de solicitud para el registro de un nuevo cliente.
-/// 
-/// PARA QUÉ SIRVE:
-///   Encapsula los campos obligatorios y opcionales necesarios para crear un cliente.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Enviado en formato JSON en el cuerpo (Body) de peticiones POST /api/clients.
-/// </summary>
+// Datos obligatorios y opcionales que se piden para registrar un cliente nuevo.
 public record CreateClienteDto(
     string Identificacion,
     string Nombres,
@@ -44,15 +31,7 @@ public record CreateClienteDto(
     int? Edad = null
 );
 
-/// <summary>
-/// DTO de solicitud para la actualización de un cliente existente.
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite modificar nombres, información de contacto o reactivar un cliente inactivo.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Enviado en formato JSON en el cuerpo (Body) de peticiones PUT /api/clients/{id}.
-/// </summary>
+// Datos permitidos para actualizar la información de contacto o el estado de un cliente existente.
 public record UpdateClienteDto(
     string Nombres,
     string Apellidos,

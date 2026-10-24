@@ -1,3 +1,7 @@
+// Pruebas para verificar las reglas del servicio de productos.
+// Comprueba que no se permita registrar dos productos con el mismo código y que, al eliminar
+// un artículo que ya tiene ventas registradas, solo se desactive para no afectar facturas pasadas.
+
 using Firmeza.Application.DTOs;
 using Firmeza.Domain.Entities;
 using Firmeza.Infrastructure.Persistence;
@@ -9,6 +13,7 @@ namespace Firmeza.Tests;
 
 public class ProductoServiceTests
 {
+    // Crea una base de datos temporal en memoria para ejecutar cada prueba de forma independiente.
     private ApplicationDbContext CreateInMemoryDbContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -18,10 +23,11 @@ public class ProductoServiceTests
         return new ApplicationDbContext(options);
     }
 
+    // Verifica que si se intenta crear un producto con un código que ya existe, el sistema lance un error.
     [Fact]
     public async Task CreateAsync_WhenCodeAlreadyExists_ShouldThrowInvalidOperationException()
     {
-        // Arrange
+        // Preparar un producto existente en la base de datos
         using var context = CreateInMemoryDbContext();
         context.Productos.Add(new Producto
         {
@@ -36,7 +42,7 @@ public class ProductoServiceTests
 
         var service = new ProductoService(context);
 
-        // Act
+        // Intentar crear otro producto con el mismo código
         var act = async () => await service.CreateAsync(new CreateProductoDto(
             Codigo: "PROD-100",
             Nombre: "Varilla Duplicada",
@@ -45,15 +51,16 @@ public class ProductoServiceTests
             Stock: 10
         ));
 
-        // Assert
+        // Comprobar que se rechace por código repetido
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Ya existe un producto con el código*");
     }
 
+    // Comprueba que al eliminar un producto que ya figura en ventas anteriores, no se borre de la tabla sino que pase a inactivo.
     [Fact]
     public async Task DeleteAsync_WhenProductHasSales_ShouldPerformSoftDelete()
     {
-        // Arrange
+        // Preparar un producto que ya tiene un detalle de venta registrado
         using var context = CreateInMemoryDbContext();
         var producto = new Producto
         {
@@ -80,10 +87,10 @@ public class ProductoServiceTests
 
         var service = new ProductoService(context);
 
-        // Act: Delete product with existing sales history
+        // Solicitar la eliminación del producto con historial de ventas
         var result = await service.DeleteAsync(1);
 
-        // Assert: Product should NOT be deleted from DB, but marked as Activo = false
+        // Comprobar que el producto permanezca guardado pero con estado inactivo
         result.Should().BeTrue();
         var productoDb = await context.Productos.FindAsync(1);
         productoDb.Should().NotBeNull();

@@ -1,22 +1,18 @@
+// Archivo: EstadoVehiculo.cs
+// Define la situación actual de cada vehículo o máquina pesada de la empresa.
+// Sirve para saber rápidamente qué equipos se pueden alquilar y cuáles están ocupados o en taller.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Representa el estado de operatividad y disponibilidad de un vehículo o maquinaria de construcción.
-/// </summary>
+// Estados de disponibilidad operativa de los vehículos y maquinaria de construcción.
 public enum EstadoVehiculo
 {
-    /// <summary>
-    /// Vehículo o máquina lista en patio para servicios de flete o alquiler.
-    /// </summary>
+    // El vehículo o máquina está libre en el patio y listo para ser alquilado o usado.
     Disponible = 1,
 
-    /// <summary>
-    /// Vehículo actualmente en servicio activo bajo contrato de alquiler a un cliente.
-    /// </summary>
+    // El equipo está actualmente entregado a un cliente bajo un contrato de alquiler.
     Alquilado = 2,
 
-    /// <summary>
-    /// Vehículo en taller para revisión técnica, preventiva o correctiva.
-    /// </summary>
+    // El equipo se encuentra en el taller recibiendo revisión o reparación mecánica.
     EnMantenimiento = 3
 }

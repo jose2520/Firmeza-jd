@@ -1,97 +1,48 @@
-using System;
-using System.Collections.Generic;
+// Este archivo representa a un cliente registrado en la plataforma comercial de Firmeza.
+// Sirve para guardar los datos personales, de contacto y ubicación de las personas o empresas
+// que compran materiales de construcción o alquilan maquinaria y vehículos en la ferretería.
 
 namespace Firmeza.Domain.Entities;
 
-/// <summary>
-/// Representa la entidad de dominio para un Cliente comercial en la plataforma Firmeza.
-/// 
-/// PARA QUÉ SIRVE:
-///   Almacena y gestiona la información de identificación, contacto y estado de los clientes
-///   que realizan compras de materiales y alquileres de maquinaria/vehículos en el sistema.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Mapea directamente contra la tabla "clientes" de la base de datos PostgreSQL ('firmeza_db').
-///   Gestionada a través de ApplicationDbContext en la capa de Infraestructura.
-/// </summary>
-public partial class Cliente
+// Representa la información de un cliente guardada en la tabla 'clientes' de la base de datos.
+public class Cliente
 {
-    /// <summary>
-    /// Identificador único autoincremental de la clave primaria.
-    /// Origen: Columna 'id' (SERIAL PRIMARY KEY) de la tabla 'clientes'.
-    /// </summary>
+    // Número identificador único del cliente en la base de datos.
     public int Id { get; set; }
 
-    /// <summary>
-    /// Documento de identidad único (Cédula de Ciudadanía, NIT, etc.).
-    /// Origen: Columna 'identificacion' (VARCHAR(20) UNIQUE) en PostgreSQL.
-    /// </summary>
+    // Número de documento de identidad del cliente (cédula de ciudadanía, NIT o pasaporte).
     public string Identificacion { get; set; } = null!;
 
-    /// <summary>
-    /// Nombres del cliente.
-    /// Origen: Columna 'nombres' (VARCHAR(100)) en PostgreSQL.
-    /// </summary>
+    // Nombres de pila del cliente o nombre del representante.
     public string Nombres { get; set; } = null!;
 
-    /// <summary>
-    /// Apellidos del cliente.
-    /// Origen: Columna 'apellidos' (VARCHAR(100)) en PostgreSQL.
-    /// </summary>
+    // Apellidos del cliente.
     public string Apellidos { get; set; } = null!;
 
-    /// <summary>
-    /// Correo electrónico único para notificaciones y facturación.
-    /// Origen: Columna 'email' (VARCHAR(150) UNIQUE) en PostgreSQL.
-    /// </summary>
+    // Dirección de correo electrónico única para enviar facturas y notificaciones.
     public string Email { get; set; } = null!;
 
-    /// <summary>
-    /// Número de teléfono o móvil de contacto.
-    /// Origen: Columna 'telefono' (VARCHAR(20), opcional) en PostgreSQL.
-    /// </summary>
+    // Número de teléfono fijo o celular para contactar al cliente.
     public string? Telefono { get; set; }
 
-    /// <summary>
-    /// Dirección física o de entrega.
-    /// Origen: Columna 'direccion' (VARCHAR(200), opcional) en PostgreSQL.
-    /// </summary>
+    // Dirección física de residencia o de la obra principal del cliente.
     public string? Direccion { get; set; }
 
-    /// <summary>
-    /// Identificador del usuario en Identity (AspNetUsers), si el cliente tiene cuenta de acceso.
-    /// Origen: Columna 'user_id' (TEXT, opcional) en PostgreSQL.
-    /// </summary>
+    // Identificador de la cuenta de usuario del sistema, en caso de que el cliente tenga acceso al portal web.
     public string? UserId { get; set; }
 
-    /// <summary>
-    /// Edad del cliente en años.
-    /// Origen: Columna 'edad' (INT CHECK (edad >= 0), opcional) en PostgreSQL.
-    /// </summary>
+    // Edad del cliente expresada en años.
     public int? Edad { get; set; }
 
-    /// <summary>
-    /// Estado lógico del registro para borrado suave (Soft Delete).
-    /// Si es false, el cliente está deshabilitado sin ser eliminado físicamente.
-    /// Origen: Columna 'activo' (BOOLEAN DEFAULT TRUE) en PostgreSQL.
-    /// </summary>
+    // Indica si el cliente está habilitado para operar (true) o si fue desactivado sin borrar su historial (false).
     public bool Activo { get; set; } = true;
 
-    /// <summary>
-    /// Marca temporal de creación del registro en el sistema.
-    /// Origen: Columna 'creado_en' (TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP) en PostgreSQL.
-    /// </summary>
+    // Fecha y hora en que el cliente fue registrado por primera vez en el sistema.
     public DateTime CreadoEn { get; set; }
 
-    /// <summary>
-    /// Colección de ventas asociadas a este cliente (Relación 1 a N).
-    /// Origen: Clave foránea 'cliente_id' en la tabla 'ventas' de PostgreSQL.
-    /// </summary>
+    // Historial de todas las compras de materiales realizadas por este cliente.
     public virtual ICollection<Venta> Ventas { get; set; } = new List<Venta>();
 
-    /// <summary>
-    /// Colección de contratos de alquiler suscritos por este cliente (Relación 1 a N).
-    /// Origen: Clave foránea 'cliente_id' en la tabla 'alquileres' de PostgreSQL.
-    /// </summary>
+    // Historial de todos los contratos de alquiler de vehículos o maquinaria tomados por este cliente.
     public virtual ICollection<Alquiler> Alquileres { get; set; } = new List<Alquiler>();
 }

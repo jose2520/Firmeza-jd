@@ -1,22 +1,25 @@
-using System;
-using System.Collections.Generic;
+// Archivo: Placa.cs
+// Representa y valida la placa de identificación de un vehículo o maquinaria (como ABC-123).
+// Sirve para garantizar que todas las placas registradas tengan letras y números válidos en mayúsculas.
+
 using System.Text.RegularExpressions;
 using Firmeza.Domain.Common;
 using Firmeza.Domain.Exceptions;
 
 namespace Firmeza.Domain.ValueObjects;
 
-/// <summary>
-/// Objeto de Valor que representa y valida la placa vehicular o de maquinaria (ej. FIR-101, ABC-123).
-/// </summary>
+// Clase que guarda la placa de un vehículo comprobando que tenga tres letras seguidas de números o letra final.
 public sealed class Placa : ValueObject
 {
+    // Regla que valida tres letras iniciales, un guion opcional y la combinación numérica de la placa.
     private static readonly Regex PlacaRegex = new(
         @"^[A-Za-z]{3}-?[0-9]{2}[0-9A-Za-z]?$",
         RegexOptions.Compiled);
 
+    // Texto de la placa limpio y convertido a mayúsculas.
     public string Valor { get; }
 
+    // Revisa que la placa no esté vacía, la convierte a mayúsculas y verifica su estructura.
     public Placa(string valor)
     {
         if (string.IsNullOrWhiteSpace(valor))
@@ -33,13 +36,18 @@ public sealed class Placa : ValueObject
         Valor = limpia;
     }
 
+    // Devuelve el texto de la placa para comparar si dos placas son iguales.
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Valor;
     }
 
+    // Devuelve la placa como texto simple.
     public override string ToString() => Valor;
 
+    // Permite usar este objeto directamente como un texto normal.
     public static implicit operator string(Placa placa) => placa.Valor;
+
+    // Permite convertir un texto normal en una placa validada.
     public static explicit operator Placa(string valor) => new(valor);
 }

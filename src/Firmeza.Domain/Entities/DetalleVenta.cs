@@ -1,64 +1,33 @@
-using System;
-using System.Collections.Generic;
+// Este archivo representa cada línea o producto individual incluido dentro de una factura de venta.
+// En el negocio de Firmeza, sirve para detallar qué material se vendió, cuántas unidades llevó el cliente,
+// a qué precio unitario se le cobró en ese momento y cuánto suma ese renglón.
 
 namespace Firmeza.Domain.Entities;
 
-/// <summary>
-/// Representa la entidad de dominio para un Renglón o Partida individual dentro de una Venta.
-/// 
-/// PARA QUÉ SIRVE:
-///   Almacena qué producto específico fue comprado, la cantidad de unidades,
-///   el precio unitario fijado en el momento de la venta y el subtotal resultante.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Mapea directamente contra la tabla "detalles_venta" de la base de datos PostgreSQL ('firmeza_db').
-///   Gestionada a través de ApplicationDbContext en la capa de Infraestructura.
-/// </summary>
-public partial class DetalleVenta
+// Representa un renglón individual de productos comprados dentro de una venta en la tabla 'detalles_venta'.
+public class DetalleVenta
 {
-    /// <summary>
-    /// Identificador único autoincremental de la clave primaria.
-    /// Origen: Columna 'id' (SERIAL PRIMARY KEY) de la tabla 'detalles_venta'.
-    /// </summary>
+    // Número identificador único de este renglón de venta en la base de datos.
     public int Id { get; set; }
 
-    /// <summary>
-    /// Clave foránea que asocia este renglón con la venta principal.
-    /// Origen: Columna 'venta_id' (INT NOT NULL) con FK hacia ventas(id) ON DELETE CASCADE.
-    /// </summary>
+    // Identificador de la factura o venta principal a la que pertenece este renglón.
     public int VentaId { get; set; }
 
-    /// <summary>
-    /// Clave foránea que referencia al producto adquirido.
-    /// Origen: Columna 'producto_id' (INT NOT NULL) con FK hacia productos(id) ON DELETE RESTRICT.
-    /// </summary>
+    // Identificador del producto o material de construcción que fue vendido.
     public int ProductoId { get; set; }
 
-    /// <summary>
-    /// Número de unidades adquiridas del producto.
-    /// Origen: Columna 'cantidad' (INT NOT NULL CHECK > 0) en PostgreSQL.
-    /// </summary>
+    // Cantidad de unidades compradas de este producto.
     public int Cantidad { get; set; }
 
-    /// <summary>
-    /// Precio unitario pactado al momento de la venta (congela el precio histórico).
-    /// Origen: Columna 'precio_unitario' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Precio por unidad que tenía el producto en el momento exacto de realizar la venta.
     public decimal PrecioUnitario { get; set; }
 
-    /// <summary>
-    /// Subtotal del renglón (Cantidad * PrecioUnitario).
-    /// Origen: Columna 'subtotal' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Valor total de este renglón, calculado al multiplicar la cantidad por el precio unitario.
     public decimal Subtotal { get; set; }
 
-    /// <summary>
-    /// Propiedad de navegación hacia el producto adquirido (Relación N a 1).
-    /// </summary>
+    // Información completa del producto o material que se vendió en este renglón.
     public virtual Producto Producto { get; set; } = null!;
 
-    /// <summary>
-    /// Propiedad de navegación hacia la cabecera de la venta (Relación N a 1).
-    /// </summary>
+    // Información completa de la factura de venta a la que pertenece este renglón.
     public virtual Venta Venta { get; set; } = null!;
 }

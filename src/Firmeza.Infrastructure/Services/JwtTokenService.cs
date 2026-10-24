@@ -1,17 +1,6 @@
-// =================================================================================================
-// SERVICIO: JwtTokenService.cs
-// CAPA: Firmeza.Infrastructure (Capa de Infraestructura y Seguridad)
-// CONTRATO: IJwtTokenService (Firmeza.Application)
-// PROPÓSITO:
-//   Genera y firma digitalmente los tokens JWT (JSON Web Tokens) que permiten la autenticación
-//   sin estado (stateless) entre el cliente (Frontend / Swagger) y la API REST.
-//
-// ORIGEN Y DESTINO DE LOS DATOS:
-//   - Configuración de la llave criptográfica: Leída desde 'appsettings.json' (sección "Jwt:Key", "Jwt:Issuer", etc.).
-//   - Identidad y Claims del Token: Proporcionados por el llamador a partir de los datos en PostgreSQL
-//     (Id de usuario, nombre de usuario, correo electrónico y lista de roles asignados).
-// =================================================================================================
-
+// Servicio encargado de crear los pases de acceso digitales (tokens JWT) para los usuarios que inician sesión.
+// Lee la clave secreta y el tiempo de duración desde el archivo appsettings.json.
+// Recibe los datos del usuario y sus roles desde las tablas "AspNetUsers" y "AspNetRoles".
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -25,31 +14,26 @@ public class JwtTokenService : IJwtTokenService
 {
     private readonly IConfiguration _configuration;
 
+    // Inicializa el servicio leyendo la configuración general de la aplicación.
     public JwtTokenService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
-    /// <summary>
-    /// Construye y firma un token JWT codificado en Base64 con un algoritmo HMAC-SHA256.
-    /// ORIGEN DE PARÁMETROS:
-    ///   - userId, userName, email: Datos extraídos de 'AspNetUsers'.
-    ///   - roles: Roles extraídos de 'AspNetUserRoles' cruzado con 'AspNetRoles'.
-    ///   - secretKey, issuer, audience, expiryMinutes: Parámetros del archivo 'appsettings.json'.
-    /// </summary>
+    // Genera un código de acceso seguro con el ID, nombre, correo y roles del usuario, junto con su fecha de vencimiento.
     public (string Token, DateTime ExpiresAt) GenerateToken(string userId, string userName, string email, IEnumerable<string> roles)
     {
         var jwtSettings = _configuration.GetSection("Jwt");
-        var secretKey = jwtSettings["Key"] ?? "FirmezaSuperSecretKeyDefault2026!MustBeAtLeast32CharsLong";
+        var secretKey = jwtSettings["Key"] ?? "FirmezaSuperSecretSecurityKey2026!*SecureKeyGreaterThan32Chars";
         var issuer = jwtSettings["Issuer"] ?? "FirmezaAPI";
         var audience = jwtSettings["Audience"] ?? "FirmezaClient";
         var expiryMinutes = int.TryParse(jwtSettings["ExpiryMinutes"], out var minutes) ? minutes : 120;
 
-        // Clave simétrica para firmar el token
+        // Clave secreta para firmar el token de seguridad
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        // Claims estándar de identidad incorporados en el Payload del token
+        // Datos básicos del usuario que viajan dentro del token
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId),
@@ -58,7 +42,7 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        // Agregar cada rol como un Claim individual para que [Authorize(Roles = "...")] funcione en los controladores
+        // Agregar cada rol del usuario para que los permisos funcionen en los controladores
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));

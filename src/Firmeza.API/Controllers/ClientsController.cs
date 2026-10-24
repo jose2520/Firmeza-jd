@@ -1,15 +1,6 @@
-// =================================================================================================
-// CONTROLADOR: ClientsController.cs
-// CAPA: Firmeza.API (Presentación / Controladores HTTP)
-// RUTA BASE: /api/Clients
-// PROPÓSITO:
-//   Gestiona la cartera de clientes de Firmeza (personas naturales y empresas).
-//   Permite consultar, registrar, editar y desactivar clientes con control de duplicados y soft-delete.
-//
-// ORIGEN DE LOS DATOS:
-//   - Todos los datos provienen y se persisten en la base de datos PostgreSQL (tabla 'clientes').
-//   - Requiere rol 'Admin' mediante JWT para todas sus operaciones.
-// =================================================================================================
+// Controlador encargado de gestionar la cartera de clientes de Firmeza.
+// Permite a los administradores consultar, registrar, actualizar y dar de baja clientes
+// verificando que no se repitan números de documento ni correos electrónicos.
 
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
@@ -25,16 +16,13 @@ public class ClientsController : ControllerBase
 {
     private readonly IClienteService _clienteService;
 
+    // Recibe el servicio que contiene la lógica de negocio para gestionar clientes.
     public ClientsController(IClienteService clienteService)
     {
         _clienteService = clienteService;
     }
 
-    /// <summary>
-    /// Lista todos los clientes registrados en el sistema.
-    /// ACCESO: Protegido (Requiere rol 'Admin').
-    /// ORIGEN DE DATOS: Base de datos PostgreSQL (tabla 'clientes' ordenados por ID).
-    /// </summary>
+    // Devuelve la lista completa de todos los clientes registrados en el sistema.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ClienteDto>>> GetAll()
     {
@@ -42,11 +30,7 @@ public class ClientsController : ControllerBase
         return Ok(clientes);
     }
 
-    /// <summary>
-    /// Consulta la información detallada de un cliente por su ID.
-    /// ACCESO: Protegido (Requiere rol 'Admin').
-    /// ORIGEN DE DATOS: Base de datos PostgreSQL (tabla 'clientes' donde id = {id}).
-    /// </summary>
+    // Busca y devuelve los datos detallados de un cliente por su identificador.
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ClienteDto>> GetById(int id)
     {
@@ -58,11 +42,7 @@ public class ClientsController : ControllerBase
         return Ok(cliente);
     }
 
-    /// <summary>
-    /// Registra un nuevo cliente validando que la identificación y el correo no existan previamente.
-    /// ACCESO: Protegido (Requiere rol 'Admin').
-    /// ORIGEN DE DATOS: Cuerpo JSON recibido en HTTP POST -> Insertado en PostgreSQL (tabla 'clientes').
-    /// </summary>
+    // Registra un nuevo cliente comprobando que su identificación y correo no estén repetidos.
     [HttpPost]
     public async Task<ActionResult<ClienteDto>> Create([FromBody] CreateClienteDto dto)
     {
@@ -73,16 +53,12 @@ public class ClientsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            // Responde 400 Bad Request si la identificación o el correo ya se encuentran en uso
+            // Devuelve un mensaje de error si la identificación o el correo ya están en uso
             return BadRequest(new { message = ex.Message });
         }
     }
 
-    /// <summary>
-    /// Actualiza la información de un cliente existente.
-    /// ACCESO: Protegido (Requiere rol 'Admin').
-    /// ORIGEN DE DATOS: Actualiza la fila en PostgreSQL (tabla 'clientes').
-    /// </summary>
+    // Actualiza los datos personales y de contacto de un cliente existente.
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ClienteDto>> Update(int id, [FromBody] UpdateClienteDto dto)
     {
@@ -101,11 +77,7 @@ public class ClientsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Elimina un cliente. Si tiene ventas registradas, aplica borrado lógico (Activo = false) para proteger la integridad financiera.
-    /// ACCESO: Protegido (Requiere rol 'Admin').
-    /// ORIGEN DE DATOS: Modifica o elimina en PostgreSQL (tabla 'clientes', evaluando si existen registros en 'ventas').
-    /// </summary>
+    // Elimina un cliente o lo desactiva si ya tiene compras registradas para conservar el historial de ventas.
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

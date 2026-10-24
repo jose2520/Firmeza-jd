@@ -1,27 +1,20 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para consultar y administrar la flota de vehículos y maquinaria.
+// En el negocio de Firmeza, sirve para buscar equipos por su placa, saber cuáles están libres para
+// alquilar a los clientes y filtrarlos según su tipo (como volquetas, mezcladoras o retroexcavadoras).
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para la flota de Vehículos de transporte y Maquinaria pesada.
-/// </summary>
+// Define las funciones para consultar y gestionar los vehículos de transporte y maquinaria pesada.
 public interface IVehiculoRepository : IRepository<Vehiculo>
 {
-    /// <summary>
-    /// Busca un vehículo o maquinaria por su número de placa o serial único.
-    /// </summary>
+    // Busca un vehículo o máquina específica usando su número de placa o código de serie.
     Task<Vehiculo?> GetByPlacaAsync(string placa, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los vehículos que se encuentran en estado 'Disponible' para ser asignados en alquiler.
-    /// </summary>
+    // Obtiene la lista de vehículos que están libres y listos para ser entregados en alquiler.
     Task<IReadOnlyList<Vehiculo>> GetDisponiblesParaAlquilerAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los vehículos filtrados por tipo (ej. Volqueta, Retroexcavadora, Mezcladora).
-    /// </summary>
+    // Devuelve los vehículos filtrados según su categoría o tipo (por ejemplo, Volqueta o Mezcladora).
     Task<IReadOnlyList<Vehiculo>> GetByTipoAsync(string tipo, CancellationToken cancellationToken = default);
 }

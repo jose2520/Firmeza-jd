@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Proveedor en la tabla "proveedores" de la base de datos.
+// Configura sus columnas de NIT, razón social, contacto, teléfono, correo, dirección y ciudad.
+// Garantiza que el NIT sea único para que no se registre dos veces la misma empresa proveedora.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class ProveedorConfiguration : IEntityTypeConfiguration<Proveedor>
 {
+    // Configura la tabla "proveedores", el tamaño de sus columnas de texto y el índice de NIT único.
     public void Configure(EntityTypeBuilder<Proveedor> builder)
     {
         builder.HasKey(e => e.Id).HasName("proveedores_pkey");

@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+  PROYECTO: Firmeza.Tests (Pruebas Automáticas de Calidad)
+  Contiene 95 pruebas que revisan automáticamente que las ventas, el inventario, los precios,
+  los archivos de Excel y las validaciones funcionen sin errores antes de publicar cambios.
+  -->
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -8,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Herramientas para ejecutar las pruebas y simular una base de datos en memoria -->
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FluentAssertions" Version="8.11.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
@@ -22,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Conexión con todos los proyectos del sistema para poder probarlos -->
     <ProjectReference Include="..\..\src\Firmeza.Application\Firmeza.Application.csproj" />
     <ProjectReference Include="..\..\src\Firmeza.Domain\Firmeza.Domain.csproj" />
     <ProjectReference Include="..\..\src\Firmeza.Infrastructure\Firmeza.Infrastructure.csproj" />

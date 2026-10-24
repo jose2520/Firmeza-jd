@@ -1,11 +1,15 @@
-using System;
+// Archivo: DespachoEntregadoDomainEvent.cs
+// Representa el aviso automático cuando el pedido llega a la obra y es recibido por el cliente.
+// Sirve para dejar constancia de la fecha y lugar exactos en que se completó la entrega.
+
 using Firmeza.Domain.Common;
 
 namespace Firmeza.Domain.Events;
 
-/// <summary>
-/// Evento de Dominio emitido cuando el pedido de materiales es recibido y firmado a satisfacción en la obra.
-/// </summary>
+// ReSharper disable NotAccessedPositionalProperty.Global
+
+// Datos del aviso que confirma que el pedido fue descargado y entregado satisfactoriamente.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public sealed record DespachoEntregadoDomainEvent(
     int DespachoId,
     int VentaId,
@@ -13,3 +17,5 @@ public sealed record DespachoEntregadoDomainEvent(
     DateTime FechaEntrega,
     DateTime OccurredOn
 ) : IDomainEvent;
+
+// ReSharper restore NotAccessedPositionalProperty.Global

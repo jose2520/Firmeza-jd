@@ -1,22 +1,18 @@
+// Archivo: EstadoAlquiler.cs
+// Define los posibles estados por los que pasa un alquiler de maquinaria o vehículos.
+// Sirve para controlar si un equipo sigue en manos del cliente, ya fue devuelto o se canceló.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Representa el ciclo de vigencia de un contrato de alquiler de maquinaria o vehículos.
-/// </summary>
+// Lista de estados que puede tener un contrato de alquiler desde su creación hasta su cierre.
 public enum EstadoAlquiler
 {
-    /// <summary>
-    /// Contrato en ejecución; maquinaria operando en obra con el cliente.
-    /// </summary>
+    // El contrato está vigente y la maquinaria se encuentra trabajando en la obra del cliente.
     Activo = 1,
 
-    /// <summary>
-    /// Contrato cumplido, maquinaria devuelta a patio e inspeccionada.
-    /// </summary>
+    // El alquiler terminó y el equipo ya fue devuelto y revisado en el patio de la empresa.
     Finalizado = 2,
 
-    /// <summary>
-    /// Contrato cancelado antes de iniciarse o por incumplimiento contractual.
-    /// </summary>
+    // El contrato se anuló antes de empezar o por incumplimiento de alguna de las partes.
     Cancelado = 3
 }

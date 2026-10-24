@@ -1,3 +1,7 @@
+// Controlador encargado de registrar y consultar el historial de movimientos de bodega.
+// Permite revisar todas las entradas, salidas y ajustes de inventario por producto,
+// actualizando las cantidades disponibles en tiempo real.
+
 using System.Security.Claims;
 using AutoMapper;
 using Firmeza.Application.DTOs;
@@ -9,10 +13,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.API.Controllers;
 
-/// <summary>
-/// Gestiona la trazabilidad y auditoría Kardex de movimientos de inventario (Entradas, Salidas y Ajustes).
-/// RUTA BASE: /api/InventoryMovements
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
@@ -21,16 +21,14 @@ public class InventoryMovementsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
 
+    // Recibe la conexión a la base de datos y el convertidor de datos de movimientos.
     public InventoryMovementsController(ApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;
     }
 
-    /// <summary>
-    /// Consulta el historial global de movimientos de inventario ordenados cronológicamente.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Devuelve el historial completo de todos los movimientos de inventario ordenados del más reciente al más antiguo.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MovimientoInventarioDto>>> GetAll()
     {
@@ -43,10 +41,7 @@ public class InventoryMovementsController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<MovimientoInventarioDto>>(movimientos));
     }
 
-    /// <summary>
-    /// Consulta el Kardex detallado para un producto específico.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Devuelve el historial de entradas, salidas y ajustes de un producto específico.
     [HttpGet("product/{productId:int}")]
     public async Task<ActionResult<IEnumerable<MovimientoInventarioDto>>> GetByProductId(int productId)
     {
@@ -60,10 +55,7 @@ public class InventoryMovementsController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<MovimientoInventarioDto>>(movimientos));
     }
 
-    /// <summary>
-    /// Registra un ajuste o movimiento manual de inventario, actualizando las existencias del producto en tiempo real.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Registra manualmente una entrada, salida o ajuste de inventario y actualiza las existencias del producto.
     [HttpPost]
     public async Task<ActionResult<MovimientoInventarioDto>> Create([FromBody] CreateMovimientoInventarioDto dto)
     {
@@ -94,7 +86,7 @@ public class InventoryMovementsController : ControllerBase
         }
         else if (tipo == "Ajuste")
         {
-            // En ajuste, la cantidad representa el nuevo stock absoluto
+            // En un ajuste, la cantidad indicada pasa a ser la nueva cantidad total disponible
             stockPosterior = dto.Cantidad;
         }
 

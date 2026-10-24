@@ -1,19 +1,6 @@
-// =================================================================================================
-// SERVICIO: ProductoService.cs
-// CAPA: Firmeza.Infrastructure (Capa de Infraestructura y Persistencia)
-// CONTRATO: IProductoService (Firmeza.Application)
-// PROPÓSITO:
-//   Implementa las operaciones CRUD sobre el catálogo de productos:
-//   - Listado y búsqueda por ID.
-//   - Creación con validación de código único y reglas de precios/stock no negativos.
-//   - Actualización de precios y disponibilidad.
-//   - Borrado inteligente: Eliminación física si no tiene historial de ventas, o borrado lógico
-//     (Activo = false) si ya figura en comprobantes previos para evitar violar restricciones de FK.
-//
-// ORIGEN Y DESTINO DE LOS DATOS:
-//   - Base de Datos Relacional: PostgreSQL (tabla 'productos' y consulta en 'detalles_venta').
-// =================================================================================================
-
+// Servicio que gestiona la consulta, creación, edición y borrado de productos del inventario.
+// Trabaja con la tabla "productos" y consulta las tablas "categorias", "proveedores", "detalles_venta" y "movimientos_inventario".
+// Si un producto ya tiene ventas o movimientos registrados, solo lo desactiva en lugar de borrarlo para conservar el historial.
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
 using Firmeza.Domain.Entities;
@@ -26,20 +13,19 @@ public class ProductoService : IProductoService
 {
     private readonly ApplicationDbContext _context;
 
+    // Inicializa el servicio de productos con la conexión a la base de datos.
     public ProductoService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    /// <summary>
-    /// Lista todos los productos registrados ordenados ascendentemente por su ID.
-    /// ORIGEN DE DATOS: PostgreSQL (tabla 'productos').
-    /// </summary>
+    // Obtiene la lista de todos los productos de la tabla "productos" incluyendo el nombre de su categoría y proveedor.
     public async Task<IEnumerable<ProductoDto>> GetAllAsync()
     {
         return await _context.Productos
             .AsNoTracking()
             .Include(p => p.Categoria)
+            .Include(p => p.Proveedor)
             .OrderBy(p => p.Id)
             .Select(p => new ProductoDto(
                 p.Id,
@@ -51,19 +37,19 @@ public class ProductoService : IProductoService
                 p.Activo,
                 p.CreadoEn,
                 p.CategoriaId,
-                p.Categoria != null ? p.Categoria.Nombre : null))
+                p.Categoria != null ? p.Categoria.Nombre : null,
+                p.ProveedorId,
+                p.Proveedor != null ? p.Proveedor.RazonSocial : null))
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Consulta un producto por su clave primaria.
-    /// ORIGEN DE DATOS: PostgreSQL (tabla 'productos' donde id = {id}).
-    /// </summary>
+    // Busca y devuelve un producto específico por su ID junto con su categoría y proveedor.
     public async Task<ProductoDto?> GetByIdAsync(int id)
     {
         var p = await _context.Productos
             .AsNoTracking()
             .Include(p => p.Categoria)
+            .Include(p => p.Proveedor)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (p == null) return null;
 
@@ -77,17 +63,17 @@ public class ProductoService : IProductoService
             p.Activo,
             p.CreadoEn,
             p.CategoriaId,
-            p.Categoria != null ? p.Categoria.Nombre : null);
+            p.Categoria != null ? p.Categoria.Nombre : null,
+            p.ProveedorId,
+            p.Proveedor != null ? p.Proveedor.RazonSocial : null);
     }
 
-    /// <summary>
-    /// Crea un producto validando unicidad de código y valores positivos de precio y stock.
-    /// ORIGEN DE DATOS: Insertado en PostgreSQL (tabla 'productos').
-    /// </summary>
+    // Crea un nuevo producto en la tabla "productos" validando que el código no exista y que el precio y stock no sean negativos.
     public async Task<ProductoDto> CreateAsync(CreateProductoDto dto)
     {
+        var codigoNormalizado = dto.Codigo.Trim().ToUpperInvariant();
         var codigoExistente = await _context.Productos
-            .AnyAsync(p => p.Codigo == dto.Codigo);
+            .AnyAsync(p => p.Codigo.ToUpper() == codigoNormalizado);
 
         if (codigoExistente)
         {
@@ -106,12 +92,13 @@ public class ProductoService : IProductoService
 
         var producto = new Producto
         {
-            Codigo = dto.Codigo.Trim().ToUpperInvariant(),
+            Codigo = codigoNormalizado,
             Nombre = dto.Nombre.Trim(),
             Descripcion = dto.Descripcion?.Trim(),
             Precio = dto.Precio,
             Stock = dto.Stock,
             CategoriaId = dto.CategoriaId,
+            ProveedorId = dto.ProveedorId,
             Activo = true,
             CreadoEn = DateTime.UtcNow
         };
@@ -126,6 +113,13 @@ public class ProductoService : IProductoService
             catNombre = cat?.Nombre;
         }
 
+        string? provNombre = null;
+        if (producto.ProveedorId.HasValue)
+        {
+            var prov = await _context.Proveedores.FindAsync(producto.ProveedorId.Value);
+            provNombre = prov?.RazonSocial;
+        }
+
         return new ProductoDto(
             producto.Id,
             producto.Codigo,
@@ -136,13 +130,12 @@ public class ProductoService : IProductoService
             producto.Activo,
             producto.CreadoEn,
             producto.CategoriaId,
-            catNombre);
+            catNombre,
+            producto.ProveedorId,
+            provNombre);
     }
 
-    /// <summary>
-    /// Actualiza los atributos de un producto existente.
-    /// ORIGEN DE DATOS: Modifica el registro en PostgreSQL (tabla 'productos').
-    /// </summary>
+    // Actualiza el nombre, descripción, precio, stock, categoría y proveedor de un producto existente.
     public async Task<ProductoDto?> UpdateAsync(int id, UpdateProductoDto dto)
     {
         var producto = await _context.Productos.FindAsync(id);
@@ -167,6 +160,10 @@ public class ProductoService : IProductoService
         {
             producto.CategoriaId = dto.CategoriaId;
         }
+        if (dto.ProveedorId.HasValue)
+        {
+            producto.ProveedorId = dto.ProveedorId;
+        }
 
         await _context.SaveChangesAsync();
 
@@ -175,6 +172,13 @@ public class ProductoService : IProductoService
         {
             var cat = await _context.Categorias.FindAsync(producto.CategoriaId.Value);
             catNombre = cat?.Nombre;
+        }
+
+        string? provNombre = null;
+        if (producto.ProveedorId.HasValue)
+        {
+            var prov = await _context.Proveedores.FindAsync(producto.ProveedorId.Value);
+            provNombre = prov?.RazonSocial;
         }
 
         return new ProductoDto(
@@ -187,21 +191,20 @@ public class ProductoService : IProductoService
             producto.Activo,
             producto.CreadoEn,
             producto.CategoriaId,
-            catNombre);
+            catNombre,
+            producto.ProveedorId,
+            provNombre);
     }
 
-    /// <summary>
-    /// Elimina un producto. Si el producto ya figura en ventas pasadas, aplica borrado lógico (inactivación)
-    /// para preservar la integridad del historial de ventas y reportes contables.
-    /// ORIGEN DE DATOS: PostgreSQL (evalúa existencia en 'detalles_venta', modifica o elimina en 'productos').
-    /// </summary>
+    // Borra un producto si nunca se ha usado, o solo lo desactiva si ya aparece en ventas o movimientos de inventario.
     public async Task<bool> DeleteAsync(int id)
     {
         var producto = await _context.Productos.FindAsync(id);
         if (producto == null) return false;
 
-        var tieneVentas = await _context.DetallesVenta.AnyAsync(d => d.ProductoId == id);
-        if (tieneVentas)
+        var tieneHistorial = await _context.DetallesVenta.AnyAsync(d => d.ProductoId == id)
+                          || await _context.MovimientosInventario.AnyAsync(m => m.ProductoId == id);
+        if (tieneHistorial)
         {
             producto.Activo = false;
         }

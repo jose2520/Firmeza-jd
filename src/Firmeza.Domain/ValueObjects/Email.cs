@@ -1,23 +1,25 @@
-using System;
-using System.Collections.Generic;
+// Archivo: Email.cs
+// Representa y valida una dirección de correo electrónico de un cliente o usuario.
+// Sirve para asegurar que los correos guardados estén bien escritos y en minúsculas.
+
 using System.Text.RegularExpressions;
 using Firmeza.Domain.Common;
 using Firmeza.Domain.Exceptions;
 
 namespace Firmeza.Domain.ValueObjects;
 
-/// <summary>
-/// Objeto de Valor que representa y valida una dirección de correo electrónico corporativa o de cliente.
-/// Inmutable y normalizado a minúsculas.
-/// </summary>
+// Clase que guarda un correo electrónico después de comprobar que tiene arroba, dominio y longitud adecuada.
 public sealed class Email : ValueObject
 {
+    // Regla que revisa que el texto tenga estructura de correo (usuario@dominio.com) sin espacios.
     private static readonly Regex EmailRegex = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    // Dirección de correo electrónico limpia y en minúsculas.
     public string Valor { get; }
 
+    // Revisa que el correo no esté vacío, lo pasa a minúsculas y valida que su formato sea real.
     public Email(string valor)
     {
         if (string.IsNullOrWhiteSpace(valor))
@@ -34,13 +36,18 @@ public sealed class Email : ValueObject
         Valor = normalizado;
     }
 
+    // Devuelve la dirección de correo para comparar si dos correos son iguales.
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Valor;
     }
 
+    // Devuelve el correo electrónico como texto simple.
     public override string ToString() => Valor;
 
+    // Permite usar este objeto directamente como un texto normal.
     public static implicit operator string(Email email) => email.Valor;
+
+    // Permite crear un correo validado a partir de un texto normal.
     public static explicit operator Email(string valor) => new(valor);
 }

@@ -1,56 +1,29 @@
+// Archivo: IExcelService.cs
+// Qué es: Plantilla para el servicio que maneja archivos de hojas de cálculo Excel.
+// Para qué sirve: Define las funciones para subir productos y clientes desde un archivo Excel, descargar reportes de inventario o ventas y bajar plantillas de ejemplo.
+
 using Firmeza.Application.DTOs;
 
 namespace Firmeza.Application.Interfaces;
 
-/// <summary>
-/// Contrato de servicio para operaciones de importación y exportación de archivos Excel (.xlsx).
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite la carga masiva de productos desde hojas de cálculo, la descarga de catálogos
-///   en Excel, la exportación de reportes de ventas consolidados y la generación de plantillas vacías.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   - Importación: Lee el flujo binario (Stream) proveniente de un archivo cargado vía HTTP multipart/form-data.
-///   - Exportación: Lee las tablas 'productos' y 'ventas' de PostgreSQL y genera un arreglo binario (byte[]) en memoria con EPPlus.
-/// </summary>
+// Define las operaciones para cargar y descargar información usando archivos Excel.
 public interface IExcelService
 {
-    /// <summary>
-    /// Lee un archivo Excel subido por el usuario, valida las columnas y procesa la carga masiva de productos.
-    /// Origen de datos: Flujo de entrada Stream (HTTP Form-Data) -> Escritura en tabla 'productos' de PostgreSQL.
-    /// </summary>
-    /// <param name="fileStream">Flujo binario del archivo .xlsx a procesar.</param>
-    /// <returns>Resultado de la importación con conteo de procesados, creados, actualizados y errores.</returns>
+    // Lee un archivo Excel subido por el usuario y guarda o actualiza los productos en el catálogo.
     Task<ExcelImportResultDto> ImportProductsFromExcelAsync(Stream fileStream);
 
-    /// <summary>
-    /// Genera y descarga un libro de Excel con todos los productos registrados en el sistema.
-    /// Origen de datos: Consulta SQL 'SELECT * FROM productos' en PostgreSQL -> Flujo de memoria con EPPlus.
-    /// </summary>
-    /// <returns>Arreglo de bytes del libro Excel generado (.xlsx).</returns>
+    // Crea un archivo Excel con el listado completo de todos los productos registrados para poder descargarlo.
     Task<byte[]> ExportProductsToExcelAsync();
 
-    /// <summary>
-    /// Genera y descarga un reporte consolidado en Excel con todas las ventas, clientes y totales facturados.
-    /// Origen de datos: Consulta SQL sobre 'ventas' y 'clientes' en PostgreSQL -> Flujo de memoria con EPPlus.
-    /// </summary>
-    /// <returns>Arreglo de bytes del reporte en Excel (.xlsx).</returns>
+    // Crea un archivo Excel con el reporte de todas las ventas realizadas y sus totales para descargar.
     Task<byte[]> ExportSalesToExcelAsync();
 
-    /// <summary>
-    /// Genera una plantilla en blanco de Excel con las cabeceras predefinidas y filas de ejemplo para facilitar la carga.
-    /// Origen de datos: Generado en memoria sin consultar base de datos.
-    /// </summary>
-    /// <returns>Arreglo de bytes de la plantilla Excel (.xlsx).</returns>
+    // Genera un archivo Excel de guía con las columnas listas y ejemplos para facilitar la carga de productos.
     byte[] GenerateProductsTemplate();
 
-    /// <summary>
-    /// Importa y normaliza en memoria un archivo Excel con datos desnormalizados (productos y clientes combinados).
-    /// </summary>
+    // Lee un archivo Excel que trae clientes y productos mezclados en la misma hoja y los guarda en orden.
     Task<DesnormalizedImportResultDto> ImportDesnormalizedDataAsync(Stream fileStream);
 
-    /// <summary>
-    /// Genera la plantilla de Excel para carga desnormalizada de clientes y productos.
-    /// </summary>
+    // Genera un archivo Excel de ejemplo para cargar clientes y productos combinados en una sola hoja.
     byte[] GenerateDesnormalizedTemplate();
 }

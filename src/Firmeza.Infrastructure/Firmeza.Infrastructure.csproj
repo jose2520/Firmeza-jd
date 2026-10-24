@@ -1,29 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <!--
-    =============================================================================
-    PROYECTO: Firmeza.Infrastructure
-    CAPA: Infraestructura (Acceso a Datos y Servicios Externos)
-    
-    PROPOSITO:
-      Implementa el acceso a la base de datos PostgreSQL mediante Entity Framework Core,
-      así como servicios de infraestructura como generación de reportes Excel (EPPlus),
-      generación de documentos PDF (iText 7/9), y emisión de tokens de seguridad JWT.
-      
-    ORIGEN DE LOS DATOS:
-      - Motor PostgreSQL local o remoto ('firmeza_db'): Lee y escribe mediante ApplicationDbContext.
-      - Archivo de configuración 'appsettings.json': Obtiene cadenas de conexión y llaves JWT.
-      - Flujos en memoria (MemoryStream): Generación de documentos binarios (PDF y XLSX).
-      
-    AUDITORÍA DE DEPENDENCIAS Y PAQUETES:
-      - EPPlus (8.7.1): Exportación de reportes de ventas e importación masiva de productos desde Excel.
-      - itext7 (9.7.0): Generación de facturas comerciales de venta en formato PDF.
-      - Microsoft.AspNetCore.Identity.EntityFrameworkCore: Gestión de tablas de usuarios y roles en PostgreSQL.
-      - Microsoft.EntityFrameworkCore.Tools: Herramientas de consola para migraciones.
-      - Npgsql.EntityFrameworkCore.PostgreSQL: Proveedor oficial de conexión a PostgreSQL.
-      - System.IdentityModel.Tokens.Jwt: Creación, firma y codificación de tokens Bearer JWT.
-      - Microsoft.Extensions.Configuration/DependencyInjection: Integración con el contenedor y appsettings.
-    =============================================================================
+    PROYECTO: Firmeza.Infrastructure (Base de Datos y Herramientas Externas)
+    Se encarga del trabajo práctico: guardar y consultar datos en PostgreSQL, crear y leer
+    archivos de Excel, generar facturas en formato PDF, enviar correos electrónicos y
+    crear llaves de acceso seguras (Tokens).
     -->
 
     <PropertyGroup>
@@ -33,34 +14,45 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Referencias a capas internas -->
+        <!-- Conexión con las capas de Dominio y Aplicación -->
         <ProjectReference Include="..\Firmeza.Domain\Firmeza.Domain.csproj" />
         <ProjectReference Include="..\Firmeza.Application\Firmeza.Application.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Generación y procesamiento de hojas de cálculo Excel (.xlsx) -->
+        <!-- Librería para crear y leer hojas de cálculo de Excel (.xlsx) -->
         <PackageReference Include="EPPlus" Version="8.7.1" />
 
-        <!-- Generación de documentos PDF de facturación -->
+        <!-- Librería para diseñar y generar facturas en PDF -->
         <PackageReference Include="itext7" Version="9.7.0" />
 
-        <!-- Seguridad e Identity con Entity Framework Core -->
+        <!-- Manejo de usuarios, contraseñas y roles en la base de datos -->
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
 
-        <!-- Inyección de dependencias y configuración (appsettings.json) -->
+        <!-- Lectura de configuraciones y registro de servicios del sistema -->
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
 
-        <!-- Conector y ORM para base de datos PostgreSQL -->
+        <!-- Conector oficial para comunicarse con la base de datos PostgreSQL -->
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
 
-        <!-- Generación y verificación de tokens de seguridad JWT -->
+        <!-- Herramienta para generar las llaves digitales de inicio de sesión (JWT) -->
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
+
+        <!-- Paquetes de seguridad actualizados para evitar vulnerabilidades -->
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+        <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Recursos visuales corporativos (Logotipos y branding) -->
+        <Content Include="Resources\Assets\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

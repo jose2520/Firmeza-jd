@@ -1,18 +1,6 @@
-// =================================================================================================
-// SERVICIO: EmailService.cs
-// CAPA: Firmeza.Infrastructure (Infraestructura y Servicios Externos)
-// CONTRATO: IEmailService (Firmeza.Application)
-// PROPÓSITO:
-//   Implementa el envío real de correos electrónicos transaccionales mediante SMTP (compatible con Gmail)
-//   para la plataforma Firmeza.
-//
-// CARACTERÍSTICAS:
-//   - Soporte para plantillas HTML corporativas con diseño responsivo.
-//   - Envío de documentos PDF adjuntos en memoria (MemoryStream).
-//   - Tolerancia a fallos: captura excepciones y registra alertas en log sin interrumpir
-//     las transacciones del negocio en entornos locales/desarrollo sin credenciales reales.
-// =================================================================================================
-
+// Servicio encargado de enviar correos electrónicos a los clientes de Firmeza.
+// Lee la configuración del servidor de correo desde el archivo appsettings.json y recibe archivos PDF generados por PdfService.cs.
+// Permite enviar correos de bienvenida a nuevos usuarios y comprobantes de compra con la factura adjunta.
 using System.Globalization;
 using System.Net;
 using System.Net.Mail;
@@ -27,15 +15,14 @@ public class EmailService : IEmailService
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailService> _logger;
 
+    // Inicializa el servicio de correo con los ajustes del sistema y el registro de mensajes.
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
     {
         _configuration = configuration;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Envía un correo electrónico general en formato HTML con adjunto opcional.
-    /// </summary>
+    // Envía un correo electrónico con diseño HTML y permite adjuntar un archivo PDF si se necesita.
     public async Task<bool> SendEmailAsync(
         string toEmail,
         string subject,
@@ -65,19 +52,17 @@ public class EmailService : IEmailService
             return true;
         }
 
+        MemoryStream? attachmentStream = null;
         try
         {
-            using var mailMessage = new MailMessage
-            {
-                From = new MailAddress(fromEmail, fromName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
-            };
+            using var mailMessage = new MailMessage();
+            mailMessage.From = new MailAddress(fromEmail, fromName);
+            mailMessage.Subject = subject;
+            mailMessage.Body = htmlBody;
+            mailMessage.IsBodyHtml = true;
 
             mailMessage.To.Add(toEmail);
 
-            MemoryStream? attachmentStream = null;
             if (attachmentBytes != null && attachmentBytes.Length > 0 && !string.IsNullOrWhiteSpace(attachmentFileName))
             {
                 attachmentStream = new MemoryStream(attachmentBytes);
@@ -85,33 +70,33 @@ public class EmailService : IEmailService
                 mailMessage.Attachments.Add(attachment);
             }
 
-            using var smtpClient = new SmtpClient(host, port)
-            {
-                EnableSsl = enableSsl,
-                Credentials = new NetworkCredential(userName, password),
-                DeliveryMethod = SmtpDeliveryMethod.Network,
-                Timeout = 15000 // 15 segundos timeout
-            };
+            using var smtpClient = new SmtpClient(host, port);
+            smtpClient.EnableSsl = enableSsl;
+            smtpClient.Credentials = new NetworkCredential(userName, password);
+            smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
+            smtpClient.Timeout = 15000; // 15 segundos de espera máxima
 
             await smtpClient.SendMailAsync(mailMessage);
             _logger.LogInformation("Correo enviado exitosamente a {ToEmail}: {Subject}", toEmail, subject);
 
-            attachmentStream?.Dispose();
             return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al enviar correo SMTP a {ToEmail} para {Subject}: {Message}", toEmail, subject, ex.Message);
-            // Tolerancia a fallos: no rompemos la ejecución del usuario
+            // Si falla el envío, devolvemos falso sin detener la aplicación
             return false;
+        }
+        finally
+        {
+            attachmentStream?.Dispose();
         }
     }
 
-    /// <summary>
-    /// Envía un correo corporativo de bienvenida tras el registro de un nuevo cliente.
-    /// </summary>
+    // Arma y envía un correo de bienvenida cuando un cliente nuevo se registra en la plataforma.
     public async Task<bool> SendWelcomeEmailAsync(string toEmail, string username)
     {
+        var safeUsername = WebUtility.HtmlEncode(username);
         var subject = "¡Bienvenido a Plataforma Firmeza!";
         var html = $@"
 <!DOCTYPE html>
@@ -134,7 +119,7 @@ public class EmailService : IEmailService
             <p>Materiales para Construcción y Ferretería Industrial</p>
         </div>
         <div class='content'>
-            <h2>¡Hola, {username}!</h2>
+            <h2>¡Hola, {safeUsername}!</h2>
             <p>Tu cuenta ha sido creada exitosamente en la plataforma digital de <strong>Firmeza</strong>.</p>
             <p>A partir de ahora podrás explorar nuestro catálogo completo de materiales, cotizar en línea y realizar pedidos directos con total seguridad y rapidez.</p>
             <p style='margin-top: 25px;'>
@@ -152,9 +137,7 @@ public class EmailService : IEmailService
         return await SendEmailAsync(toEmail, subject, html);
     }
 
-    /// <summary>
-    /// Envía la confirmación de compra y la factura comercial PDF adjunta al cliente.
-    /// </summary>
+    // Arma y envía al cliente el correo de confirmación de su compra junto con el archivo PDF de su factura.
     public async Task<bool> SendInvoiceEmailAsync(
         string toEmail,
         string clientName,
@@ -164,6 +147,8 @@ public class EmailService : IEmailService
     {
         var culture = new CultureInfo("es-CO");
         var formattedTotal = total.ToString("C2", culture);
+        var safeClientName = WebUtility.HtmlEncode(clientName);
+        var safeSaleNumber = WebUtility.HtmlEncode(saleNumber);
         var subject = $"Comprobante de Compra y Factura - {saleNumber} | Firmeza";
         var fileName = $"Factura_{saleNumber}.pdf";
 
@@ -188,10 +173,10 @@ public class EmailService : IEmailService
             <p>Confirmación de Orden y Facturación Electrónica</p>
         </div>
         <div class='content'>
-            <h2>Estimado/a {clientName},</h2>
+            <h2>Estimado/a {safeClientName},</h2>
             <p>¡Gracias por tu compra! Tu pedido ha sido procesado y registrado exitosamente en nuestro sistema.</p>
             <div class='card'>
-                <p><strong>Número de Venta:</strong> {saleNumber}</p>
+                <p><strong>Número de Venta:</strong> {safeSaleNumber}</p>
                 <p><strong>Fecha:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC</p>
                 <p><strong>Total Pagado (IVA 19% Incluido):</strong> <span style='font-size: 18px; color: #0f766e; font-weight: bold;'>{formattedTotal}</span></p>
             </div>

@@ -1,11 +1,15 @@
-using System;
+// Archivo: StockBajoDomainEvent.cs
+// Representa el aviso automático cuando quedan pocas unidades de un material en la bodega.
+// Sirve para alertar al equipo de compras que es necesario pedir más mercancía al proveedor.
+
 using Firmeza.Domain.Common;
 
 namespace Firmeza.Domain.Events;
 
-/// <summary>
-/// Evento de Dominio emitido cuando el stock de un producto cae por debajo de su umbral mínimo de seguridad.
-/// </summary>
+// ReSharper disable NotAccessedPositionalProperty.Global
+
+// Datos de la alerta que se genera cuando un producto llega o baja de su cantidad mínima permitida.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public sealed record StockBajoDomainEvent(
     int ProductoId,
     string CodigoProducto,
@@ -13,3 +17,5 @@ public sealed record StockBajoDomainEvent(
     int StockRestante,
     DateTime OccurredOn
 ) : IDomainEvent;
+
+// ReSharper restore NotAccessedPositionalProperty.Global

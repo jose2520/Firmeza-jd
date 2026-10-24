@@ -1,27 +1,17 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define el encargado de enviar avisos internos cuando ocurre algo importante en el negocio.
+// En Firmeza, sirve para notificar automáticamente a otras partes del sistema cuando se realiza una venta,
+// se agota un producto o se alquila un vehículo.
+
 using Firmeza.Domain.Common;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato para el despachador de eventos de dominio.
-/// Permite publicar y enrutar eventos a sus respectivos suscriptores o manejadores.
-/// </summary>
+// Define las funciones para repartir avisos de actividades importantes del negocio a quienes deban procesarlos.
 public interface IDomainEventDispatcher
 {
-    /// <summary>
-    /// Despacha una colección de eventos de dominio a sus respectivos manejadores.
-    /// </summary>
-    /// <param name="domainEvents">Lista de eventos de dominio acumulados.</param>
-    /// <param name="cancellationToken">Token de cancelación.</param>
+    // Envía una lista de varios avisos acumulados para que el sistema ejecute las acciones correspondientes.
     Task DispatchEventsAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Despacha un evento de dominio individual a su manejador correspondiente.
-    /// </summary>
-    /// <param name="domainEvent">Evento de dominio a publicar.</param>
-    /// <param name="cancellationToken">Token de cancelación.</param>
+    // Envía un único aviso del negocio para que sea atendido de inmediato por su encargado.
     Task DispatchEventAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default);
 }

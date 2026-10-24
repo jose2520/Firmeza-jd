@@ -1,37 +1,27 @@
+// Archivo: TipoIdentificacion.cs
+// Define los tipos de documentos de identidad aceptados para registrar clientes y proveedores.
+// Sirve para cumplir con los requisitos legales y de facturación en Colombia.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Tipos de documento de identificación para clientes, proveedores y contratistas en Colombia.
-/// </summary>
+// Documentos de identificación válidos para personas naturales y empresas en Colombia.
 public enum TipoIdentificacion
 {
-    /// <summary>
-    /// Cédula de Ciudadanía (persona natural colombiana).
-    /// </summary>
+    // Cédula de Ciudadanía para personas naturales colombianas mayores de edad.
     CedulaCiudadania = 1,
 
-    /// <summary>
-    /// Número de Identificación Tributaria (persona jurídica o comerciante con DIAN).
-    /// </summary>
-    NIT = 2,
+    // Número de Identificación Tributaria para empresas o comerciantes registrados en la DIAN.
+    Nit = 2,
 
-    /// <summary>
-    /// Cédula de Extranjería.
-    /// </summary>
+    // Cédula de Extranjería para residentes extranjeros en el país.
     CedulaExtranjeria = 3,
 
-    /// <summary>
-    /// Pasaporte para clientes extranjeros.
-    /// </summary>
+    // Pasaporte oficial para ciudadanos extranjeros no residentes.
     Pasaporte = 4,
 
-    /// <summary>
-    /// Registro Único Tributario.
-    /// </summary>
-    RUT = 5,
+    // Registro Único Tributario para identificar contribuyentes y actividades económicas.
+    Rut = 5,
 
-    /// <summary>
-    /// Tarjeta de Identidad.
-    /// </summary>
+    // Tarjeta de Identidad para menores de edad cuando aplique su registro.
     TarjetaIdentidad = 6
 }

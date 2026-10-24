@@ -1,27 +1,20 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para consultar y gestionar los envíos de materiales a las obras.
+// En el negocio de Firmeza, sirve para hacer seguimiento a los pedidos que están pendientes de salir
+// de bodega o que ya van en camino hacia la dirección del cliente.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para la logística de Despachos y entregas de pedidos en obra.
-/// </summary>
+// Define las funciones para consultar y controlar la logística de entregas y despachos.
 public interface IDespachoRepository : IRepository<Despacho>
 {
-    /// <summary>
-    /// Obtiene el despacho asociado a una venta específica.
-    /// </summary>
+    // Obtiene la información del envío asociado a una venta específica.
     Task<Despacho?> GetByVentaIdAsync(int ventaId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene todos los despachos que se encuentran pendientes de asignación o salida.
-    /// </summary>
+    // Devuelve la lista de todos los envíos que están esperando ser despachados desde la bodega.
     Task<IReadOnlyList<Despacho>> GetDespachosPendientesAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los despachos que se encuentran actualmente en ruta hacia las obras de destino.
-    /// </summary>
+    // Devuelve la lista de los envíos que ya están en camino hacia las obras de destino.
     Task<IReadOnlyList<Despacho>> GetDespachosEnRutaAsync(CancellationToken cancellationToken = default);
 }

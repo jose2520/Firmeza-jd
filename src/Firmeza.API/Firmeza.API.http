@@ -1,6 +1,10 @@
+# Archivo: Firmeza.API.http
+# Propósito: Permite probar rápidamente las funciones de la API con un clic desde el editor.
+# Incluye ejemplos para iniciar sesión, ver el panel de resumen, crear productos, clientes y ventas.
+
 @Firmeza.API_HostAddress = http://localhost:5125
 
-### 0. Healthcheck / Bienvenida
+### 0. Revisión de estado y bienvenida del servidor
 GET {{Firmeza.API_HostAddress}}/
 Accept: application/json
 

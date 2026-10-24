@@ -1,55 +1,35 @@
-using System;
-using System.Collections.Generic;
+// Este archivo define las operaciones básicas de lectura, búsqueda, registro, actualización y borrado.
+// En el negocio de Firmeza, sirve como plantilla común para que todos los módulos (clientes, productos,
+// ventas, vehículos) manejen sus datos de forma ordenada y uniforme.
+
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato genérico base para repositorios de entidades de dominio en Firmeza.
-/// Define las operaciones estándar de lectura, consulta y persistencia.
-/// </summary>
-/// <typeparam name="TEntity">Tipo de la entidad de dominio.</typeparam>
+// Define las operaciones básicas para consultar, agregar, modificar y eliminar registros de cualquier tabla.
 public interface IRepository<TEntity> where TEntity : class
 {
-    /// <summary>
-    /// Obtiene una entidad por su identificador primario.
-    /// </summary>
+    // Busca y devuelve un registro específico usando su número identificador único.
     Task<TEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene la colección completa de entidades de este tipo.
-    /// </summary>
+    // Obtiene la lista completa de todos los registros guardados de este tipo.
     Task<IReadOnlyList<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Busca entidades que cumplan con la expresión o predicado especificado.
-    /// </summary>
+    // Busca y devuelve todos los registros que cumplan con una condición de búsqueda específica.
     Task<IReadOnlyList<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Agrega una nueva entidad al repositorio.
-    /// </summary>
+    // Agrega un nuevo registro para que sea guardado en la base de datos.
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Agrega una colección de entidades al repositorio de forma masiva.
-    /// </summary>
+    // Agrega varios registros al mismo tiempo de forma masiva.
     Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Marca una entidad existente como modificada.
-    /// </summary>
+    // Marca un registro existente como modificado para actualizar sus datos.
     void Update(TEntity entity);
 
-    /// <summary>
-    /// Elimina una entidad del repositorio.
-    /// </summary>
+    // Elimina un registro existente del sistema.
     void Remove(TEntity entity);
 
-    /// <summary>
-    /// Determina si existe al menos una entidad que satisfaga la condición especificada.
-    /// </summary>
+    // Verifica si existe al menos un registro que cumpla con la condición indicada.
     Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 }

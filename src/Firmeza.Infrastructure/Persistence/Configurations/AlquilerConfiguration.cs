@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Alquiler en la tabla "alquileres" de la base de datos.
+// Configura sus columnas, índices de búsqueda y su relación con las tablas "clientes" y "vehiculos".
+// Asegura que el número de contrato sea único y no se puedan borrar clientes o vehículos con alquileres.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class AlquilerConfiguration : IEntityTypeConfiguration<Alquiler>
 {
+    // Configura el nombre de la tabla "alquileres", sus columnas, tamaños de texto y llaves foráneas.
     public void Configure(EntityTypeBuilder<Alquiler> builder)
     {
         builder.HasKey(e => e.Id).HasName("alquileres_pkey");

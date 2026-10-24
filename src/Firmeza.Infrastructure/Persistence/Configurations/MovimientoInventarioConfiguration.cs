@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad MovimientoInventario en la tabla "movimientos_inventario".
+// Registra el historial de entradas, salidas y ajustes de stock vinculados a la tabla "productos".
+// Guarda qué cantidad había antes, cuánto se movió, cuánto quedó y quién hizo el cambio.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class MovimientoInventarioConfiguration : IEntityTypeConfiguration<MovimientoInventario>
 {
+    // Configura la tabla "movimientos_inventario", sus columnas de historial y su relación con el producto.
     public void Configure(EntityTypeBuilder<MovimientoInventario> builder)
     {
         builder.HasKey(e => e.Id).HasName("movimientos_inventario_pkey");

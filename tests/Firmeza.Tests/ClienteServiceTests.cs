@@ -1,3 +1,7 @@
+// Pruebas sobre el servicio encargado de gestionar los clientes de Firmeza.
+// Verifica que no se permitan documentos repetidos ni edades negativas, y que al borrar
+// un cliente con compras previas solo se desactive en lugar de eliminarse por completo.
+
 using Firmeza.Application.DTOs;
 using Firmeza.Domain.Entities;
 using Firmeza.Infrastructure.Persistence;
@@ -9,6 +13,7 @@ namespace Firmeza.Tests;
 
 public class ClienteServiceTests
 {
+    // Crea una base de datos temporal en memoria para realizar cada prueba sin afectar datos reales.
     private ApplicationDbContext CreateInMemoryDbContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -18,10 +23,11 @@ public class ClienteServiceTests
         return new ApplicationDbContext(options);
     }
 
+    // Comprueba que el sistema rechace el registro de un cliente nuevo cuando su número de identificación ya existe.
     [Fact]
     public async Task CreateAsync_WhenIdentificacionAlreadyExists_ShouldThrowInvalidOperationException()
     {
-        // Arrange
+        // Preparar los datos de prueba
         using var context = CreateInMemoryDbContext();
         context.Clientes.Add(new Cliente
         {
@@ -36,7 +42,7 @@ public class ClienteServiceTests
 
         var service = new ClienteService(context);
 
-        // Act
+        // Intentar registrar otro cliente con la misma identificación
         var act = async () => await service.CreateAsync(new CreateClienteDto(
             Identificacion: "1020304050",
             Nombres: "Otro",
@@ -46,15 +52,16 @@ public class ClienteServiceTests
             Direccion: null
         ));
 
-        // Assert
+        // Comprobar que arroje el error esperado
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Ya existe un cliente con la identificación*");
     }
 
+    // Verifica que al intentar eliminar un cliente que ya tiene ventas, se conserve su registro pero quede marcado como inactivo.
     [Fact]
     public async Task DeleteAsync_WhenClientHasSales_ShouldPerformSoftDelete()
     {
-        // Arrange
+        // Preparar un cliente con una venta registrada
         using var context = CreateInMemoryDbContext();
         var cliente = new Cliente
         {
@@ -82,24 +89,25 @@ public class ClienteServiceTests
 
         var service = new ClienteService(context);
 
-        // Act
+        // Ejecutar la eliminación del cliente
         var result = await service.DeleteAsync(1);
 
-        // Assert
+        // Comprobar que sigue en la base de datos pero inactivo
         result.Should().BeTrue();
         var clienteDb = await context.Clientes.FindAsync(1);
         clienteDb.Should().NotBeNull();
         clienteDb!.Activo.Should().BeFalse();
     }
 
+    // Comprueba que no se permita registrar un cliente si se ingresa un número negativo en su edad.
     [Fact]
     public async Task CreateAsync_WhenEdadIsNegative_ShouldThrowInvalidOperationException()
     {
-        // Arrange
+        // Preparar el servicio
         using var context = CreateInMemoryDbContext();
         var service = new ClienteService(context);
 
-        // Act
+        // Intentar crear un cliente con edad negativa
         var act = async () => await service.CreateAsync(new CreateClienteDto(
             Identificacion: "1099887766",
             Nombres: "Laura",
@@ -111,19 +119,20 @@ public class ClienteServiceTests
             Edad: -5
         ));
 
-        // Assert
+        // Comprobar que el sistema lance un error por la edad inválida
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*edad*no puede ser un número negativo*");
     }
 
+    // Verifica que un cliente con edad válida y cuenta de usuario asociada se guarde correctamente en la base de datos.
     [Fact]
     public async Task CreateAsync_WithValidEdadAndUserId_ShouldPersistCorrectly()
     {
-        // Arrange
+        // Preparar el servicio
         using var context = CreateInMemoryDbContext();
         var service = new ClienteService(context);
 
-        // Act
+        // Crear el cliente con datos válidos
         var result = await service.CreateAsync(new CreateClienteDto(
             Identificacion: "1099887766",
             Nombres: "Laura",
@@ -135,7 +144,7 @@ public class ClienteServiceTests
             Edad: 25
         ));
 
-        // Assert
+        // Comprobar que se guardaron tanto la edad como el identificador de usuario
         result.Should().NotBeNull();
         result.Edad.Should().Be(25);
         result.UserId.Should().Be("USER-123");

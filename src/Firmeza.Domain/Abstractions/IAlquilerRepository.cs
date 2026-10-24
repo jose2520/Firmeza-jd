@@ -1,32 +1,23 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones de consulta y guardado para los alquileres de maquinaria y vehículos.
+// En el negocio de Firmeza, sirve para buscar contratos por su código, revisar qué equipos siguen
+// prestados y consultar el historial de alquileres de cada cliente o vehículo.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para la gestión de contratos de Alquiler de maquinaria y vehículos.
-/// </summary>
+// Define las funciones para consultar y guardar contratos de alquiler en la base de datos.
 public interface IAlquilerRepository : IRepository<Alquiler>
 {
-    /// <summary>
-    /// Busca un contrato de alquiler por su número consecutivo (ej. ALQ-2026-0001).
-    /// </summary>
+    // Busca un contrato de alquiler específico usando su código único (por ejemplo, ALQ-2026-0001).
     Task<Alquiler?> GetByNumeroContratoAsync(string numeroContrato, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene todos los alquileres en estado 'Activo' en curso.
-    /// </summary>
+    // Obtiene la lista de todos los alquileres que están actualmente en curso.
     Task<IReadOnlyList<Alquiler>> GetAlquileresActivosAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los contratos de alquiler asociados a un cliente específico.
-    /// </summary>
+    // Devuelve todos los contratos de alquiler que ha realizado un cliente en particular.
     Task<IReadOnlyList<Alquiler>> GetAlquileresByClienteAsync(int clienteId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los contratos de alquiler en los que ha participado un vehículo determinado.
-    /// </summary>
+    // Devuelve el historial de contratos de alquiler en los que se ha usado un vehículo específico.
     Task<IReadOnlyList<Alquiler>> GetAlquileresByVehiculoAsync(int vehiculoId, CancellationToken cancellationToken = default);
 }

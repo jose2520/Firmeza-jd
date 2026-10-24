@@ -1,23 +1,12 @@
+// Archivo: IPdfService.cs
+// Qué es: Plantilla para el servicio que genera documentos en formato PDF.
+// Para qué sirve: Define la función que arma el documento de la factura de una venta listo para descargar, imprimir o enviar por correo.
+
 namespace Firmeza.Application.Interfaces;
 
-/// <summary>
-/// Contrato de servicio para la generación de documentos oficiales y facturas en formato PDF.
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite generar en tiempo de ejecución facturas comerciales de venta en PDF con diseño empresarial,
-///   tablas estructuradas, desglose de impuestos y datos de cliente, listas para descarga o impresión.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Consulta las tablas 'ventas', 'clientes', 'detalles_venta' y 'productos' en PostgreSQL ('firmeza_db'),
-///   y renderiza los datos en memoria utilizando la biblioteca iText 7/9.
-/// </summary>
+// Define las operaciones para crear documentos PDF dentro del sistema.
 public interface IPdfService
 {
-    /// <summary>
-    /// Genera la factura comercial de una venta en formato binario PDF.
-    /// Origen de datos: Registro de la venta (id: @saleId) en PostgreSQL -> Flujo MemoryStream con iText.
-    /// </summary>
-    /// <param name="saleId">ID de la venta a facturar.</param>
-    /// <returns>Arreglo de bytes del documento PDF generado (application/pdf).</returns>
+    // Genera el archivo PDF de la factura de una venta con los datos del cliente, productos comprados e impuestos.
     Task<byte[]> GenerateSaleInvoicePdfAsync(int saleId);
 }

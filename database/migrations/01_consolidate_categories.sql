@@ -1,10 +1,6 @@
--- =============================================================================
--- MIGRACIÓN: 01_consolidate_categories.sql
--- PROPÓSITO: Saneamiento de categorías duplicadas, inserción del catálogo maestro
---            de 20 categorías (incluyendo maquinaria y vehículos de construcción)
---            y asociación del producto huérfano PROD-001.
--- BASE DE DATOS: PostgreSQL ('firmeza_db')
--- =============================================================================
+-- Archivo: 01_consolidate_categories.sql
+-- Propósito: Limpia categorías repetidas, asegura que estén creadas las 20 categorías
+-- principales del catálogo (incluyendo maquinaria y vehículos) y asigna su categoría al producto PROD-001.
 
 BEGIN;
 

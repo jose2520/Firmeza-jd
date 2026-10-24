@@ -1,112 +1,59 @@
-using System;
-using System.Collections.Generic;
+// Este archivo representa un producto o material de construcción dentro del catálogo de Firmeza.
+// Sirve para administrar toda la información de cada artículo en venta: su código, nombre, precio,
+// cantidad disponible en bodega, proveedor y las reglas para sumar o descontar existencias sin errores.
+
 using Firmeza.Domain.Common;
 using Firmeza.Domain.Events;
 using Firmeza.Domain.Exceptions;
 
 namespace Firmeza.Domain.Entities;
 
-/// <summary>
-/// Representa la entidad de dominio y Agregado Raíz para un Producto del catálogo ferretero y de construcción.
-/// 
-/// PARA QUÉ SIRVE:
-///   Gestiona el catálogo de artículos, su precio unitario de venta, el stock disponible
-///   en inventario, categorización, proveedor asociado y el control de bajas lógicas (Soft Delete).
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Mapea directamente contra la tabla "productos" de la base de datos PostgreSQL ('firmeza_db').
-///   Gestionada a través de ApplicationDbContext en la capa de Infraestructura.
-/// </summary>
-public partial class Producto : AggregateRoot
+// Representa un artículo o material de construcción guardado en la tabla 'productos' de la base de datos.
+public class Producto : AggregateRoot
 {
-    /// <summary>
-    /// Identificador único autoincremental de la clave primaria.
-    /// Origen: Columna 'id' (SERIAL PRIMARY KEY) de la tabla 'productos'.
-    /// </summary>
+    // Número identificador único del producto en la base de datos.
     public int Id { get; set; }
 
-    /// <summary>
-    /// Código alfanumérico único del producto (SKU / Código de barras).
-    /// Origen: Columna 'codigo' (VARCHAR(50) UNIQUE) en PostgreSQL.
-    /// </summary>
+    // Código único de referencia o código de barras del producto en el catálogo.
     public string Codigo { get; set; } = null!;
 
-    /// <summary>
-    /// Nombre descriptivo del producto (ej. Cemento Gris, Tornillo de Acero).
-    /// Origen: Columna 'nombre' (VARCHAR(150)) en PostgreSQL.
-    /// </summary>
+    // Nombre comercial del producto (por ejemplo: Cemento Gris 50 kg o Varilla Corrugada).
     public string Nombre { get; set; } = null!;
 
-    /// <summary>
-    /// Descripción técnica o comercial detallada del producto.
-    /// Origen: Columna 'descripcion' (TEXT, opcional) en PostgreSQL.
-    /// </summary>
+    // Detalle adicional sobre las características, medidas o usos del material.
     public string? Descripcion { get; set; }
 
-    /// <summary>
-    /// Precio unitario de venta antes de impuestos.
-    /// Origen: Columna 'precio' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Precio de venta por cada unidad del producto antes de aplicar impuestos.
     public decimal Precio { get; set; }
 
-    /// <summary>
-    /// Unidades disponibles actualmente en inventario físico/bodega.
-    /// Origen: Columna 'stock' (INT DEFAULT 0 CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Cantidad de unidades físicas disponibles actualmente en la bodega para la venta.
     public int Stock { get; set; }
 
-    /// <summary>
-    /// Clave foránea opcional hacia la categoría del producto.
-    /// Origen: Columna 'categoria_id' (INT) con FK hacia categorias(id).
-    /// </summary>
+    // Identificador de la categoría o familia a la que pertenece este producto.
     public int? CategoriaId { get; set; }
 
-    /// <summary>
-    /// Clave foránea opcional hacia el proveedor o fabricante.
-    /// Origen: Columna 'proveedor_id' (INT) con FK hacia proveedores(id).
-    /// </summary>
+    // Identificador de la empresa proveedora o fabricante que suministra este producto.
     public int? ProveedorId { get; set; }
 
-    /// <summary>
-    /// Indicador de visibilidad y estado activo del producto (Soft Delete).
-    /// Origen: Columna 'activo' (BOOLEAN DEFAULT TRUE) en PostgreSQL.
-    /// </summary>
+    // Indica si el producto está disponible en el catálogo (true) o si fue ocultado sin borrar su historial (false).
     public bool Activo { get; set; } = true;
 
-    /// <summary>
-    /// Fecha y hora de registro del producto en el catálogo.
-    /// Origen: Columna 'creado_en' (TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP) en PostgreSQL.
-    /// </summary>
+    // Fecha y hora en que el producto fue dado de alta en el catálogo.
     public DateTime CreadoEn { get; set; }
 
-    /// <summary>
-    /// Navegación a la categoría.
-    /// </summary>
+    // Datos de la categoría a la que pertenece el producto.
     public virtual Categoria? Categoria { get; set; }
 
-    /// <summary>
-    /// Navegación al proveedor.
-    /// </summary>
+    // Datos del proveedor que suministra el producto.
     public virtual Proveedor? Proveedor { get; set; }
 
-    /// <summary>
-    /// Renglones de venta en los que este producto ha sido incluido (Relación 1 a N).
-    /// </summary>
+    // Lista de todos los renglones de facturas en los que se ha vendido este producto.
     public virtual ICollection<DetalleVenta> DetallesVenta { get; set; } = new List<DetalleVenta>();
 
-    /// <summary>
-    /// Historial de movimientos de inventario Kardex (Relación 1 a N).
-    /// </summary>
+    // Historial completo de entradas, salidas y ajustes de bodega de este producto.
     public virtual ICollection<MovimientoInventario> MovimientosInventario { get; set; } = new List<MovimientoInventario>();
 
-    // =========================================================================
-    // MÉTODOS DE DOMINIO Y REGLAS DE NEGOCIO (DDD)
-    // =========================================================================
-
-    /// <summary>
-    /// Descuenta existencias del inventario garantizando que no se rebase el stock disponible.
-    /// Si el stock resultante es inferior o igual a 10 unidades, emite StockBajoDomainEvent.
-    /// </summary>
+    // Resta unidades de la bodega al realizar una venta, verificando que alcance la mercancía y avisando si quedan 10 o menos unidades.
     public void DescontarStock(int cantidad)
     {
         if (cantidad <= 0)
@@ -123,9 +70,7 @@ public partial class Producto : AggregateRoot
         }
     }
 
-    /// <summary>
-    /// Incrementa las existencias del inventario por compras o devoluciones autorizadas.
-    /// </summary>
+    // Suma nuevas unidades al inventario cuando llega mercancía de un proveedor o se hace una devolución.
     public void IncrementarStock(int cantidad)
     {
         if (cantidad <= 0)
@@ -134,9 +79,7 @@ public partial class Producto : AggregateRoot
         Stock += cantidad;
     }
 
-    /// <summary>
-    /// Actualiza el precio del producto validando que no sea negativo.
-    /// </summary>
+    // Cambia el precio unitario del producto asegurando que nunca se guarde un valor negativo.
     public void ActualizarPrecio(decimal nuevoPrecio)
     {
         if (nuevoPrecio < 0)

@@ -1,3 +1,7 @@
+// Pruebas básicas sobre las clases principales de productos y ventas.
+// Verifica que al crear un producto o una venta se guarden correctamente sus valores
+// iniciales y se mantenga la relación con el cliente y sus detalles de compra.
+
 using Firmeza.Domain.Entities;
 using FluentAssertions;
 
@@ -5,10 +9,11 @@ namespace Firmeza.Tests;
 
 public class DomainEntityTests
 {
+    // Comprueba que un producto nuevo guarde su código, nombre, precio, existencias e inicie sin ventas asociadas.
     [Fact]
     public void Producto_ShouldInitializePropertiesCorrectly()
     {
-        // Arrange & Act
+        // Crear el producto de prueba
         var producto = new Producto
         {
             Id = 1,
@@ -19,7 +24,7 @@ public class DomainEntityTests
             Activo = true
         };
 
-        // Assert
+        // Comprobar que cada campo tenga el valor asignado
         producto.Id.Should().Be(1);
         producto.Codigo.Should().Be("PROD-001");
         producto.Precio.Should().Be(15000m);
@@ -28,10 +33,11 @@ public class DomainEntityTests
         producto.DetallesVenta.Should().BeEmpty();
     }
 
+    // Verifica que una venta quede asociada a su cliente y que su total coincida con la suma del subtotal más el impuesto.
     [Fact]
     public void Venta_ShouldLinkToClientAndDetails()
     {
-        // Arrange
+        // Preparar un cliente y una venta asociada
         var cliente = new Cliente
         {
             Id = 1,
@@ -53,7 +59,7 @@ public class DomainEntityTests
             Estado = "Completada"
         };
 
-        // Assert
+        // Comprobar el vínculo con el cliente y el cálculo del total
         venta.Cliente.Should().BeSameAs(cliente);
         venta.Total.Should().Be(venta.Subtotal + venta.Iva);
         venta.DetallesVenta.Should().BeEmpty();

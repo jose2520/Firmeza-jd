@@ -1,3 +1,6 @@
+// Archivo de configuración para registrar los servicios de la capa de infraestructura.
+// Conecta la base de datos PostgreSQL mediante ApplicationDbContext y AppDbContext.
+// Registra los repositorios de todas las tablas y los servicios de correo, PDF, Excel y seguridad.
 using Firmeza.Application.Interfaces;
 using Firmeza.Domain.Abstractions;
 using Firmeza.Infrastructure.Persistence;
@@ -12,30 +15,27 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Firmeza.Infrastructure;
 
-/// <summary>
-/// Módulo de configuración e inyección de dependencias de la capa de Infraestructura.
-/// Registra Persistencia (DbContext, Interceptores, Repositorios, UnitOfWork, Seeders)
-/// y Servicios de aplicación (JWT, Correo, PDF, Excel, CRUDs).
-/// </summary>
 public static class DependencyInjection
 {
-    /// <summary>
-    /// Registra los servicios de infraestructura en el contenedor IoC de la aplicación.
-    /// </summary>
+    // Registra la conexión a la base de datos, los repositorios y los servicios del sistema para que estén disponibles en toda la aplicación.
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         // 1. Obtener la cadena de conexión desde appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-        // 2. Registrar Interceptores de EF Core
+        // 2. Registrar Proveedor de Tiempo, Despachador de Eventos e Interceptores de base de datos
+        services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<DispatchDomainEventsInterceptor>();
 
-        // 3. Registrar DbContexts (ApplicationDbContext y AppDbContext) con PostgreSQL
+        // 3. Registrar contextos de base de datos (ApplicationDbContext y AppDbContext) con PostgreSQL
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString);
-            options.AddInterceptors(sp.GetRequiredService<AuditableEntityInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<AuditableEntityInterceptor>(),
+                sp.GetRequiredService<DispatchDomainEventsInterceptor>());
         });
 
         services.AddScoped<AppDbContext>(sp =>
@@ -44,7 +44,7 @@ public static class DependencyInjection
             return new AppDbContext(options);
         });
 
-        // 4. Configurar ASP.NET Core Identity
+        // 4. Configurar ASP.NET Core Identity con bloqueo ante intentos fallidos
         services.AddIdentityCore<IdentityUser>(options =>
         {
             options.Password.RequireDigit = false;
@@ -52,11 +52,15 @@ public static class DependencyInjection
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequireUppercase = false;
             options.Password.RequiredLength = 6;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+            options.User.RequireUniqueEmail = true;
         })
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        // 5. Registrar el Patrón Repositorio y Unit of Work
+        // 5. Registrar los repositorios de acceso a datos
         services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
@@ -69,7 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IMovimientoInventarioRepository, MovimientoInventarioRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // 6. Registrar Sembradores Programáticos
+        // 6. Registrar el cargador de datos iniciales
         services.AddScoped<IDbSeeder, DbSeeder>();
 
         // 7. Registrar Servicios de Aplicación e Infraestructura

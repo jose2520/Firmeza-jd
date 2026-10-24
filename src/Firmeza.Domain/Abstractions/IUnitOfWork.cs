@@ -1,37 +1,21 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define el encargado de confirmar o cancelar de forma segura los cambios en la base de datos.
+// En el negocio de Firmeza, sirve para asegurar que operaciones compuestas (como registrar una venta y
+// descontar el inventario al mismo tiempo) se guarden completas o se deshagan si ocurre algún error.
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato para el patrón Unit of Work (Unidad de Trabajo).
-/// Coordina la persistencia atómica y el manejo de transacciones entre múltiples repositorios.
-/// </summary>
+// Coordina el guardado definitivo de los cambios y el control de operaciones seguras en la base de datos.
 public interface IUnitOfWork : IDisposable
 {
-    /// <summary>
-    /// Guarda todos los cambios pendientes en el almacén de datos de forma asíncrona.
-    /// </summary>
-    /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns>Número de entidades afectadas o guardadas.</returns>
+    // Guarda de forma definitiva todos los cambios pendientes en la base de datos y devuelve cuántos registros se actualizaron.
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Inicia una transacción de base de datos atómica.
-    /// </summary>
-    /// <param name="cancellationToken">Token de cancelación.</param>
+    // Inicia un bloque de operaciones agrupadas para que todas se ejecuten juntas de manera segura.
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Confirma la transacción activa actual.
-    /// </summary>
-    /// <param name="cancellationToken">Token de cancelación.</param>
+    // Confirma y aplica de forma permanente todos los cambios realizados dentro del bloque actual.
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Revierte la transacción activa actual descartando cualquier modificación.
-    /// </summary>
-    /// <param name="cancellationToken">Token de cancelación.</param>
+    // Deshace todos los cambios realizados en el bloque actual si ocurre algún problema, dejando todo como estaba antes.
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
 }

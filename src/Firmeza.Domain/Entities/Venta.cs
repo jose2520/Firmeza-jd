@@ -1,105 +1,56 @@
-using System;
-using System.Collections.Generic;
+// Este archivo representa la factura o recibo principal de una venta realizada en la ferretería.
+// En el negocio de Firmeza, sirve para agrupar quién compró, cómo pagó, en qué fecha, cuánto suma
+// el subtotal, el impuesto (IVA) y el total final, además de permitir confirmar o anular la compra.
+
 using Firmeza.Domain.Common;
 using Firmeza.Domain.Events;
 using Firmeza.Domain.Exceptions;
 
 namespace Firmeza.Domain.Entities;
 
-/// <summary>
-/// Representa la entidad de dominio y Agregado Raíz para el Encabezado de una Transacción de Venta.
-/// 
-/// PARA QUÉ SIRVE:
-///   Almacena los datos consolidados de una factura o recibo de venta: número consecutivo,
-///   cliente asociado, método de pago, fecha, subtotal, impuesto (IVA), total a pagar y estado.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Mapea directamente contra la tabla "ventas" de la base de datos PostgreSQL ('firmeza_db').
-///   Gestionada a través de ApplicationDbContext en la capa de Infraestructura.
-/// </summary>
-public partial class Venta : AggregateRoot
+// Representa el encabezado de una factura o transacción de venta en la tabla 'ventas' de la base de datos.
+public class Venta : AggregateRoot
 {
-    /// <summary>
-    /// Identificador único autoincremental de la clave primaria.
-    /// Origen: Columna 'id' (SERIAL PRIMARY KEY) de la tabla 'ventas'.
-    /// </summary>
+    // Número identificador único de la venta en la base de datos.
     public int Id { get; set; }
 
-    /// <summary>
-    /// Código consecutivo único de la venta (ej. VENTA-2026-0001).
-    /// Origen: Columna 'numero_venta' (VARCHAR(50) UNIQUE) en PostgreSQL.
-    /// </summary>
+    // Número consecutivo único de la factura o recibo de venta (por ejemplo: VENTA-2026-0001).
     public string NumeroVenta { get; set; } = null!;
 
-    /// <summary>
-    /// Clave foránea que referencia al cliente que realizó la compra.
-    /// Origen: Columna 'cliente_id' (INT NOT NULL) con FK hacia clientes(id) en PostgreSQL.
-    /// </summary>
+    // Identificador del cliente que realizó la compra.
     public int ClienteId { get; set; }
 
-    /// <summary>
-    /// Clave foránea opcional que referencia el método de pago utilizado.
-    /// Origen: Columna 'metodo_pago_id' (INT) con FK hacia metodos_pago(id) en PostgreSQL.
-    /// </summary>
+    // Identificador del medio de pago elegido por el cliente para cancelar la factura.
     public int? MetodoPagoId { get; set; }
 
-    /// <summary>
-    /// Fecha y hora exacta de emisión de la venta.
-    /// Origen: Columna 'fecha' (TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP) en PostgreSQL.
-    /// </summary>
+    // Fecha y hora exacta en que se realizó la venta.
     public DateTime Fecha { get; set; }
 
-    /// <summary>
-    /// Valor monetario antes de impuestos calculado sumando los subtotales de sus renglones.
-    /// Origen: Columna 'subtotal' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Suma del valor de todos los productos comprados antes de aplicar el impuesto.
     public decimal Subtotal { get; set; }
 
-    /// <summary>
-    /// Valor monetario del impuesto al valor agregado (IVA 19%).
-    /// Origen: Columna 'iva' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Valor en dinero correspondiente al impuesto sobre las ventas (IVA del 19%).
     public decimal Iva { get; set; }
 
-    /// <summary>
-    /// Importe total de la venta (Subtotal + IVA).
-    /// Origen: Columna 'total' (NUMERIC(12,2) CHECK >= 0) en PostgreSQL.
-    /// </summary>
+    // Monto final a pagar por el cliente, sumando el subtotal más el impuesto (IVA).
     public decimal Total { get; set; }
 
-    /// <summary>
-    /// Estado del ciclo de vida de la transacción ('Completada', 'Pendiente', 'Anulada').
-    /// Origen: Columna 'estado' (VARCHAR(20) DEFAULT 'Completada') en PostgreSQL.
-    /// </summary>
+    // Estado actual de la factura (puede ser Completada, Pendiente o Anulada).
     public string Estado { get; set; } = null!;
 
-    /// <summary>
-    /// Propiedad de navegación hacia el cliente comprador (Relación N a 1).
-    /// </summary>
+    // Información completa del cliente que hizo la compra.
     public virtual Cliente Cliente { get; set; } = null!;
 
-    /// <summary>
-    /// Propiedad de navegación hacia el método de pago utilizado (Relación N a 1).
-    /// </summary>
+    // Información completa de la forma de pago utilizada en la venta.
     public virtual MetodoPago? MetodoPago { get; set; }
 
-    /// <summary>
-    /// Información logística del despacho a obra, si aplica (Relación 1 a 1).
-    /// </summary>
+    // Datos del envío a domicilio o a la obra, en caso de que la venta incluya despacho.
     public virtual Despacho? Despacho { get; set; }
 
-    /// <summary>
-    /// Colección de renglones o partidas individuales adquiridas (Relación 1 a N).
-    /// </summary>
+    // Lista de los renglones detallados con cada producto, cantidad y precio incluidos en esta factura.
     public virtual ICollection<DetalleVenta> DetallesVenta { get; set; } = new List<DetalleVenta>();
 
-    // =========================================================================
-    // MÉTODOS DE DOMINIO Y REGLAS DE NEGOCIO (DDD)
-    // =========================================================================
-
-    /// <summary>
-    /// Valida y confirma la venta emitiendo el evento VentaRegistradaDomainEvent.
-    /// </summary>
+    // Verifica que el total a cobrar sea válido, marca la factura como completada y envía el aviso de nueva venta registrada.
     public void RegistrarVenta()
     {
         if (Total < 0)
@@ -109,9 +60,7 @@ public partial class Venta : AggregateRoot
         AddDomainEvent(new VentaRegistradaDomainEvent(Id, NumeroVenta, ClienteId, Total, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Anula la transacción comercial y emite VentaCanceladaDomainEvent.
-    /// </summary>
+    // Cambia el estado de la factura a anulada cuando se cancela la operación y envía el aviso con el motivo de la cancelación.
     public void CancelarVenta(string motivo)
     {
         if (Estado == "Anulada")

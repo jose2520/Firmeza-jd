@@ -1,10 +1,12 @@
-using System;
+// Archivo: CommercialDtos.cs
+// Qué es: Conjunto de estructuras de datos para las operaciones comerciales adicionales del negocio.
+// Para qué sirve: Permite enviar y recibir información de proveedores, formas de pago, vehículos, alquileres de maquinaria, envíos y movimientos de bodega.
 
 namespace Firmeza.Application.DTOs;
 
-// =============================================================================
-// DTOs PARA PROVEEDORES
-// =============================================================================
+// ReSharper disable NotAccessedPositionalProperty.Global
+
+// Muestra la información completa de un proveedor registrado en el sistema.
 public record ProveedorDto(
     int Id = 0,
     string Nit = "",
@@ -18,6 +20,8 @@ public record ProveedorDto(
     DateTime CreadoEn = default
 );
 
+// Datos necesarios para registrar un nuevo proveedor comercial.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record CreateProveedorDto(
     string Nit,
     string RazonSocial,
@@ -28,6 +32,7 @@ public record CreateProveedorDto(
     string? Ciudad = null
 );
 
+// Datos para modificar la información de contacto o el estado de un proveedor existente.
 public record UpdateProveedorDto(
     string Nit,
     string RazonSocial,
@@ -39,9 +44,7 @@ public record UpdateProveedorDto(
     bool Activo = true
 );
 
-// =============================================================================
-// DTOs PARA MÉTODOS DE PAGO
-// =============================================================================
+// Muestra los datos de una forma de pago disponible (efectivo, tarjeta, transferencia, etc.).
 public record MetodoPagoDto(
     int Id = 0,
     string Codigo = "",
@@ -50,15 +53,23 @@ public record MetodoPagoDto(
     bool Activo = true
 );
 
+// Datos requeridos para agregar una nueva forma de pago al sistema.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record CreateMetodoPagoDto(
     string Codigo,
     string Nombre,
     string? Descripcion = null
 );
 
-// =============================================================================
-// DTOs PARA VEHÍCULOS Y MAQUINARIA DE CONSTRUCCIÓN
-// =============================================================================
+// Datos para actualizar el nombre, descripción o estado de una forma de pago.
+public record UpdateMetodoPagoDto(
+    string Codigo,
+    string Nombre,
+    string? Descripcion = null,
+    bool Activo = true
+);
+
+// Muestra la ficha completa de un vehículo o maquinaria de construcción y su tarifa por día.
 public record VehiculoDto(
     int Id = 0,
     string Placa = "",
@@ -72,6 +83,8 @@ public record VehiculoDto(
     DateTime CreadoEn = default
 );
 
+// Datos necesarios para registrar un nuevo vehículo o maquinaria en la flota.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record CreateVehiculoDto(
     string Placa,
     string Marca,
@@ -81,6 +94,7 @@ public record CreateVehiculoDto(
     decimal TarifaDiaria = 0
 );
 
+// Datos para actualizar las características, tarifa o disponibilidad de un vehículo.
 public record UpdateVehiculoDto(
     string Marca,
     string Modelo,
@@ -91,9 +105,7 @@ public record UpdateVehiculoDto(
     bool Activo = true
 );
 
-// =============================================================================
-// DTOs PARA CONTRATOS DE ALQUILER DE MAQUINARIA (US 4)
-// =============================================================================
+// Muestra todos los detalles de un contrato de alquiler de maquinaria, incluyendo cliente, vehículo, fechas y costo total.
 public record AlquilerDto(
     int Id = 0,
     string NumeroContrato = "",
@@ -112,6 +124,7 @@ public record AlquilerDto(
     DateTime CreadoEn = default
 );
 
+// Datos necesarios para crear un nuevo contrato de alquiler de un vehículo o maquinaria.
 public record CreateAlquilerDto(
     string NumeroContrato,
     int ClienteId,
@@ -122,9 +135,7 @@ public record CreateAlquilerDto(
     decimal ValorDiario
 );
 
-// =============================================================================
-// DTOs PARA LOGÍSTICA Y DESPACHOS
-// =============================================================================
+// Muestra la información de envío a domicilio de una venta, como dirección, contacto, costo de transporte y estado de entrega.
 public record DespachoDto(
     int Id = 0,
     int VentaId = 0,
@@ -140,6 +151,8 @@ public record DespachoDto(
     DateTime CreadoEn = default
 );
 
+// Datos que se piden para programar un nuevo envío a domicilio asociado a una venta.
+[System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 public record CreateDespachoDto(
     int VentaId,
     string DireccionEntrega,
@@ -151,9 +164,7 @@ public record CreateDespachoDto(
     string? Observaciones = null
 );
 
-// =============================================================================
-// DTOs PARA TRAZABILIDAD Y KARDEX DE INVENTARIO
-// =============================================================================
+// Muestra el registro de una entrada o salida de mercancía en bodega, indicando cuánto había antes y cuánto quedó después.
 public record MovimientoInventarioDto(
     int Id = 0,
     int ProductoId = 0,
@@ -169,6 +180,7 @@ public record MovimientoInventarioDto(
     DateTime Fecha = default
 );
 
+// Datos necesarios para registrar manualmente una entrada o salida de unidades de un producto en el inventario.
 public record CreateMovimientoInventarioDto(
     int ProductoId,
     string TipoMovimiento,
@@ -176,3 +188,6 @@ public record CreateMovimientoInventarioDto(
     string? Referencia = null,
     string? Motivo = null
 );
+
+// ReSharper restore NotAccessedPositionalProperty.Global
+

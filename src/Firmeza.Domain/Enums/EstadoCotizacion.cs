@@ -1,32 +1,24 @@
+// Archivo: EstadoCotizacion.cs
+// Define las etapas por las que pasa una cotización o presupuesto enviado a un cliente.
+// Sirve para saber si una oferta comercial sigue en preparación, fue aceptada o ya venció.
+
 namespace Firmeza.Domain.Enums;
 
-/// <summary>
-/// Estados del ciclo de vida comercial de una cotización o presupuesto para clientes.
-/// </summary>
+// Estados comerciales que indican el avance de una cotización de materiales o alquiler.
 public enum EstadoCotizacion
 {
-    /// <summary>
-    /// Cotización en elaboración por el asesor comercial.
-    /// </summary>
+    // El presupuesto aún está siendo redactado por el vendedor y no se ha enviado.
     Borrador = 1,
 
-    /// <summary>
-    /// Cotización enviada al cliente pendiente de revisión o respuesta.
-    /// </summary>
+    // La cotización ya fue entregada al cliente y se espera su respuesta.
     Enviada = 2,
 
-    /// <summary>
-    /// Cotización aprobada por el cliente y lista para convertirse en orden de venta.
-    /// </summary>
+    // El cliente aceptó los precios y condiciones, lista para convertirse en una venta.
     Aprobada = 3,
 
-    /// <summary>
-    /// Cotización rechazada o declinada por el cliente.
-    /// </summary>
+    // El cliente decidió no aceptar la oferta comercial.
     Rechazada = 4,
 
-    /// <summary>
-    /// Cotización que superó los días de validez de precios (ej. variación precio del acero/cemento).
-    /// </summary>
+    // La oferta superó el tiempo límite de validez de los precios ofrecidos.
     Vencida = 5
 }

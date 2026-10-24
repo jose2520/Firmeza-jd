@@ -1,32 +1,25 @@
+// Archivo: DependencyInjection.cs
+// Qué es: Configuración inicial de las herramientas de la capa de Aplicación.
+// Para qué sirve: Conecta y deja listas las herramientas de conversión de datos para que el resto del programa pueda usarlas fácilmente.
+
+using AutoMapper;
+using Firmeza.Application.Mappings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Firmeza.Application;
 
-/// <summary>
-/// Clase de extensión para registrar servicios de la capa de Aplicación en el contenedor IoC.
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite que la capa API registre de forma modular y desacoplada todas las dependencias
-///   propias de la capa de Aplicación (validadores, casos de uso, mediadores).
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Recibe la colección de servicios en memoria del contenedor de dependencias (IServiceCollection).
-/// </summary>
+// Clase que agrupa el registro de los servicios de aplicación al iniciar el sistema.
 public static class DependencyInjection
 {
-    /// <summary>
-    /// Agrega los servicios de la capa de Aplicación al contenedor de inyección de dependencias.
-    /// </summary>
-    /// <param name="services">Contenedor IServiceCollection de ASP.NET Core.</param>
-    /// <returns>La misma colección de servicios para encadenamiento fluido.</returns>
+    // Registra las reglas de conversión automática de datos para que estén disponibles en toda la aplicación.
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // 1. Configurar y registrar AutoMapper para transformaciones entre entidades y DTOs
-        var mapperConfig = new AutoMapper.MapperConfiguration(
-            cfg => cfg.AddProfile<Mappings.MappingProfile>(),
-            Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
-        services.AddSingleton<AutoMapper.IMapper>(mapperConfig.CreateMapper());
+        // Configurar y registrar AutoMapper para convertir datos entre tablas y objetos de envío
+        var mapperConfig = new MapperConfiguration(
+            cfg => cfg.AddProfile<MappingProfile>(),
+            NullLoggerFactory.Instance);
+        services.AddSingleton(mapperConfig.CreateMapper());
 
         return services;
     }

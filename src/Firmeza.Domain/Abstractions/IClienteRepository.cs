@@ -1,31 +1,23 @@
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para buscar, validar y guardar la información de los clientes.
+// En el negocio de Firmeza, sirve para encontrar compradores por su documento o correo electrónico
+// y evitar que se registren clientes duplicados en el sistema.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para la gestión y consulta de Clientes.
-/// </summary>
+// Define las funciones para consultar y administrar el directorio de clientes de la ferretería.
 public interface IClienteRepository : IRepository<Cliente>
 {
-    /// <summary>
-    /// Busca un cliente por su número de identificación fiscal o cédula.
-    /// </summary>
+    // Busca a un cliente por su número de cédula, NIT o documento de identidad.
     Task<Cliente?> GetByIdentificacionAsync(string identificacion, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Busca un cliente por su dirección de correo electrónico registrada.
-    /// </summary>
+    // Busca a un cliente utilizando su dirección de correo electrónico registrada.
     Task<Cliente?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Comprueba si ya existe un cliente con la identificación dada, opcionalmente excluyendo un ID específico.
-    /// </summary>
+    // Revisa si ya hay otro cliente registrado con ese mismo documento de identidad.
     Task<bool> ExistsIdentificacionAsync(string identificacion, int? excludeId = null, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Comprueba si ya existe un cliente con el correo electrónico dado, opcionalmente excluyendo un ID específico.
-    /// </summary>
+    // Revisa si ya hay otro cliente registrado con ese mismo correo electrónico.
     Task<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default);
 }

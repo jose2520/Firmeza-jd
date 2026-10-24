@@ -1,19 +1,7 @@
-// =================================================================================================
-// CONTEXTO DE DATOS: ApplicationDbContext.cs
-// CAPA: Firmeza.Infrastructure.Persistence (Persistencia y Acceso a Datos - Clean Architecture)
-// PROPÓSITO:
-//   Contexto principal de Entity Framework Core 10 para PostgreSQL (Npgsql).
-//   Hereda de IdentityDbContext<IdentityUser> para unificar:
-//   - Tablas de seguridad y roles (ASP.NET Core Identity: 'AspNetUsers', 'AspNetRoles', etc.).
-//   - Tablas del modelo comercial y logístico ('categorias', 'proveedores', 'metodos_pago',
-//     'clientes', 'productos', 'ventas', 'detalles_venta', 'despachos', 'movimientos_inventario',
-//     'vehiculos', 'alquileres').
-//
-// ARQUITECTURA:
-//   Desacopla los mapeos hacia clases independientes en Persistence/Configurations/
-//   invocando modelBuilder.ApplyConfigurationsFromAssembly(...).
-// =================================================================================================
-
+// Archivo principal que conecta la aplicación con la base de datos PostgreSQL.
+// Maneja las tablas de usuarios y roles de seguridad junto con las tablas del negocio:
+// categorias, proveedores, metodos_pago, clientes, productos, ventas, detalles_venta,
+// despachos, movimientos_inventario, vehiculos y alquileres.
 using Firmeza.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -23,23 +11,24 @@ namespace Firmeza.Infrastructure.Persistence;
 
 public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
+    // Constructor vacío para inicializar el contexto sin opciones previas.
     public ApplicationDbContext()
     {
     }
 
+    // Constructor principal que recibe la configuración de conexión a la base de datos.
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
+    // Constructor protegido para permitir que otras clases como AppDbContext hereden de esta.
     protected ApplicationDbContext(DbContextOptions options)
         : base(options)
     {
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // CONJUNTOS DE ENTIDADES (DbSets) - Mapean directamente a tablas en PostgreSQL
-    // ---------------------------------------------------------------------------------------------
+    // Tablas del negocio disponibles para consultas y guardados en PostgreSQL
     public virtual DbSet<Categoria> Categorias { get; set; } = null!;
     public virtual DbSet<Proveedor> Proveedores { get; set; } = null!;
     public virtual DbSet<MetodoPago> MetodosPago { get; set; } = null!;
@@ -52,12 +41,13 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     public virtual DbSet<Vehiculo> Vehiculos { get; set; } = null!;
     public virtual DbSet<Alquiler> Alquileres { get; set; } = null!;
 
+    // Configura las tablas de usuarios y aplica las reglas de todas las tablas de la carpeta Configurations.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // 1. Configuración obligatoria para las tablas internas de ASP.NET Core Identity
+        // 1. Configuración obligatoria para las tablas internas de usuarios y roles
         base.OnModelCreating(modelBuilder);
 
-        // 2. Aplicar automáticamente todas las configuraciones IEntityTypeConfiguration de este ensamblado
+        // 2. Aplicar automáticamente todas las configuraciones de tablas definidas en este proyecto
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }

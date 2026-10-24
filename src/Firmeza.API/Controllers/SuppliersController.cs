@@ -1,3 +1,7 @@
+// Controlador para administrar el directorio de proveedores y fabricantes aliados de Firmeza.
+// Permite a los administradores consultar, registrar, actualizar y dar de baja proveedores
+// validando que el número de identificación tributaria (NIT) sea único.
+
 using AutoMapper;
 using Firmeza.Application.DTOs;
 using Firmeza.Domain.Entities;
@@ -8,10 +12,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.API.Controllers;
 
-/// <summary>
-/// Gestiona los proveedores y fabricantes de materiales de construcción y ferretería.
-/// RUTA BASE: /api/Suppliers
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
@@ -20,16 +20,14 @@ public class SuppliersController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
 
+    // Recibe la conexión a la base de datos y el convertidor de datos de proveedores.
     public SuppliersController(ApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;
     }
 
-    /// <summary>
-    /// Lista todos los proveedores registrados.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Devuelve la lista completa de todos los proveedores ordenados alfabéticamente por su razón social.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProveedorDto>>> GetAll()
     {
@@ -41,10 +39,7 @@ public class SuppliersController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<ProveedorDto>>(proveedores));
     }
 
-    /// <summary>
-    /// Consulta el detalle de un proveedor por su ID.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Busca y devuelve la información detallada de un proveedor por su identificador.
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProveedorDto>> GetById(int id)
     {
@@ -58,10 +53,7 @@ public class SuppliersController : ControllerBase
         return Ok(_mapper.Map<ProveedorDto>(proveedor));
     }
 
-    /// <summary>
-    /// Registra un nuevo proveedor aliado.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Registra un nuevo proveedor verificando que no exista otro con el mismo número NIT.
     [HttpPost]
     public async Task<ActionResult<ProveedorDto>> Create([FromBody] CreateProveedorDto dto)
     {
@@ -75,10 +67,7 @@ public class SuppliersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = proveedor.Id }, _mapper.Map<ProveedorDto>(proveedor));
     }
 
-    /// <summary>
-    /// Actualiza la información de contacto o fiscal de un proveedor.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Actualiza los datos comerciales y de contacto de un proveedor existente.
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ProveedorDto>> Update(int id, [FromBody] UpdateProveedorDto dto)
     {
@@ -100,5 +89,27 @@ public class SuppliersController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(_mapper.Map<ProveedorDto>(proveedor));
+    }
+
+    // Elimina un proveedor o lo marca como inactivo si ya tiene productos asociados en el catálogo.
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var proveedor = await _context.Proveedores.FindAsync(id);
+        if (proveedor == null)
+            return NotFound(new { message = $"Proveedor con ID {id} no encontrado." });
+
+        var tieneProductos = await _context.Productos.AnyAsync(p => p.ProveedorId == id);
+        if (tieneProductos)
+        {
+            proveedor.Activo = false;
+        }
+        else
+        {
+            _context.Proveedores.Remove(proveedor);
+        }
+
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 }

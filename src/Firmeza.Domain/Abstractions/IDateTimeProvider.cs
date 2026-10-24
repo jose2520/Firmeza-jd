@@ -1,26 +1,18 @@
-using System;
+// Este archivo define un servicio para obtener la fecha y hora actual dentro del sistema.
+// En el negocio de Firmeza, sirve para registrar con exactitud cuándo se hacen las ventas,
+// alquileres o movimientos de bodega, facilitando también las pruebas automáticas del sistema.
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato para el proveedor de fecha y hora del sistema.
-/// Desacopla las reglas de negocio y entidades de llamadas directas a DateTime.UtcNow,
-/// permitiendo tests unitarios deterministas y reproducibles.
-/// </summary>
+// Define cómo el sistema consulta la fecha y hora actual de manera centralizada.
 public interface IDateTimeProvider
 {
-    /// <summary>
-    /// Fecha y hora actual en formato UTC.
-    /// </summary>
+    // Devuelve la fecha y hora actual en horario universal estándar (UTC).
     DateTime UtcNow { get; }
 
-    /// <summary>
-    /// Fecha y hora actual en la zona horaria del servidor.
-    /// </summary>
+    // Devuelve la fecha y hora actual según el reloj local del servidor.
     DateTime Now { get; }
 
-    /// <summary>
-    /// Fecha del día actual (sin componente horaria).
-    /// </summary>
+    // Devuelve únicamente la fecha del día de hoy, sin incluir la hora.
     DateOnly Today { get; }
 }

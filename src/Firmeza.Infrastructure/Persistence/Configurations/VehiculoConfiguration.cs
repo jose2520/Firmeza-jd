@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Vehiculo en la tabla "vehiculos" de la base de datos.
+// Configura datos de maquinaria y camiones como placa, marca, modelo, capacidad en toneladas y tarifa diaria.
+// Asegura que la placa sea única para que cada vehículo esté identificado sin duplicados.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class VehiculoConfiguration : IEntityTypeConfiguration<Vehiculo>
 {
+    // Configura la tabla "vehiculos", sus columnas de características, valores por defecto y placa única.
     public void Configure(EntityTypeBuilder<Vehiculo> builder)
     {
         builder.HasKey(e => e.Id).HasName("vehiculos_pkey");

@@ -1,22 +1,17 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para consultar y administrar los proveedores de la ferretería.
+// En el negocio de Firmeza, sirve para buscar empresas distribuidoras o fabricantes por su NIT
+// y obtener el listado de proveedores con los que se trabaja actualmente.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para Proveedores y fabricantes aliados.
-/// </summary>
+// Define las funciones para consultar y guardar la información de los proveedores y fabricantes aliados.
 public interface IProveedorRepository : IRepository<Proveedor>
 {
-    /// <summary>
-    /// Busca un proveedor por su NIT tributario único.
-    /// </summary>
+    // Busca a un proveedor específico utilizando su número de identificación tributaria (NIT).
     Task<Proveedor?> GetByNitAsync(string nit, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los proveedores que se encuentran activos comercialmente.
-    /// </summary>
+    // Obtiene la lista de todos los proveedores que se encuentran habilitados comercialmente.
     Task<IReadOnlyList<Proveedor>> GetActivosAsync(CancellationToken cancellationToken = default);
 }

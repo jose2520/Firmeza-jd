@@ -1,3 +1,7 @@
+// Pruebas de las reglas de negocio principales del núcleo de Firmeza.
+// Verifica que los formatos de correo, NIT, teléfono, placa, precios y códigos de producto sean válidos,
+// además de comprobar el descuento de existencias, el registro y anulación de ventas y los alquileres.
+
 using Firmeza.Domain.Abstractions;
 using Firmeza.Domain.Entities;
 using Firmeza.Domain.Enums;
@@ -6,16 +10,14 @@ using Firmeza.Domain.Events;
 using Firmeza.Domain.Exceptions;
 using Firmeza.Domain.ValueObjects;
 using FluentAssertions;
-using Xunit;
 
 namespace Firmeza.Tests;
 
 public class DomainDddTests
 {
-    // =========================================================================
-    // 1. VALUE OBJECTS TESTS
-    // =========================================================================
+    // 1. Pruebas de objetos de valor y formatos de datos
 
+    // Comprueba que el correo electrónico se convierta a minúsculas y que dos correos iguales se reconozcan como equivalentes.
     [Fact]
     public void Email_ShouldNormalizeToLowercaseAndBeEqualByValue()
     {
@@ -28,6 +30,7 @@ public class DomainDddTests
         email1.GetHashCode().Should().Be(email2.GetHashCode());
     }
 
+    // Verifica que se rechacen correos vacíos o mal escritos que no tengan arroba o dominio válido.
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -41,6 +44,7 @@ public class DomainDddTests
            .And.NombreCampo.Should().Be("Email");
     }
 
+    // Comprueba que un NIT con formato colombiano válido se guarde y compare correctamente.
     [Fact]
     public void Nit_ShouldValidateColombianFormatAndBeEqualByValue()
     {
@@ -52,16 +56,18 @@ public class DomainDddTests
         (nit1 != nit2).Should().BeFalse();
     }
 
+    // Verifica que se lance un error cuando el NIT esté vacío, sea muy corto o tenga un dígito de verificación inválido.
     [Theory]
     [InlineData("")]
     [InlineData("123")] // Menor a 5 dígitos
-    [InlineData("860002130-123")] // DV inválido
+    [InlineData("860002130-123")] // Dígito de verificación inválido
     public void Nit_ShouldThrowValorInvalidoException_WhenFormatIsInvalid(string nitInvalido)
     {
         var act = () => new Nit(nitInvalido);
         act.Should().Throw<ValorInvalidoException>();
     }
 
+    // Comprueba que el teléfono acepte números válidos y rechace aquellos que tengan menos de 7 dígitos.
     [Fact]
     public void Telefono_ShouldValidateDigitLength()
     {
@@ -72,6 +78,7 @@ public class DomainDddTests
         act.Should().Throw<ValorInvalidoException>();
     }
 
+    // Verifica que la placa de un vehículo se convierta a mayúsculas y rechace textos demasiado largos.
     [Fact]
     public void Placa_ShouldNormalizeToUppercaseAndValidateStructure()
     {
@@ -85,6 +92,7 @@ public class DomainDddTests
         actInvalida.Should().Throw<ValorInvalidoException>();
     }
 
+    // Comprueba que los valores monetarios permitan sumar, restar y multiplicar correctamente y no acepten montos negativos.
     [Fact]
     public void Dinero_ShouldEnforceNonNegativeAndPerformArithmetic()
     {
@@ -106,6 +114,7 @@ public class DomainDddTests
         actNegativo.Should().Throw<ValorInvalidoException>();
     }
 
+    // Verifica que el código del producto se convierta a mayúsculas y no permita valores en blanco.
     [Fact]
     public void CodigoSku_ShouldNormalizeUppercaseAndValidateFormat()
     {
@@ -116,31 +125,37 @@ public class DomainDddTests
         actVacio.Should().Throw<ValorInvalidoException>();
     }
 
-    // =========================================================================
-    // 2. DOMAIN ERRORS TESTS
-    // =========================================================================
+    // 2. Pruebas del catálogo de errores de negocio
 
+    // Comprueba que cada código de error del negocio tenga el identificador y la categoría que le corresponde.
     [Fact]
     public void DomainErrors_ShouldContainStandardizedCodesAndDescriptions()
     {
         DomainErrors.Cliente.EmailInvalido.Code.Should().Be("Cliente.EmailInvalido");
+        DomainErrors.Cliente.EmailInvalido.Description.Should().Be("El formato del correo electrónico suministrado no es válido.");
         DomainErrors.Cliente.EmailInvalido.Type.Should().Be(ErrorType.Validation);
 
         DomainErrors.Producto.StockInsuficiente.Code.Should().Be("Producto.StockInsuficiente");
+        DomainErrors.Producto.StockInsuficiente.Description.Should().Be("No hay existencias físicas suficientes en almacén para despachar el pedido.");
         DomainErrors.Producto.StockInsuficiente.Type.Should().Be(ErrorType.Failure);
 
         DomainErrors.Venta.YaAnulada.Code.Should().Be("Venta.YaAnulada");
+        DomainErrors.Venta.YaAnulada.Description.Should().Be("La venta seleccionada ya se encuentra en estado anulada.");
         DomainErrors.Venta.YaAnulada.Type.Should().Be(ErrorType.Conflict);
 
         DomainErrors.Vehiculo.NoDisponible.Code.Should().Be("Vehiculo.NoDisponible");
+        DomainErrors.Vehiculo.NoDisponible.Description.Should().Be("El vehículo o maquinaria solicitada no se encuentra disponible para alquiler.");
+
         DomainErrors.Alquiler.DiasInvalidos.Code.Should().Be("Alquiler.DiasInvalidos");
+        DomainErrors.Alquiler.DiasInvalidos.Description.Should().Be("La duración del contrato de alquiler debe ser de al menos 1 día.");
+
         DomainErrors.Despacho.DireccionInvalida.Code.Should().Be("Despacho.DireccionInvalida");
+        DomainErrors.Despacho.DireccionInvalida.Description.Should().Be("La dirección de entrega en obra no puede estar vacía.");
     }
 
-    // =========================================================================
-    // 3. DOMAIN EVENTS TESTS
-    // =========================================================================
+    // 3. Pruebas de avisos internos del negocio
 
+    // Verifica que los avisos de venta registrada, vehículo alquilado y despachos guarden todos los datos de la operación y su fecha.
     [Fact]
     public void DomainEvents_ShouldCaptureContextAndTimestamp()
     {
@@ -149,18 +164,37 @@ public class DomainDddTests
 
         eventoVenta.VentaId.Should().Be(1);
         eventoVenta.NumeroVenta.Should().Be("VENTA-2026-001");
+        eventoVenta.ClienteId.Should().Be(10);
         eventoVenta.Total.Should().Be(150000m);
         eventoVenta.OccurredOn.Should().Be(fecha);
 
         var eventoVehiculo = new VehiculoAlquiladoDomainEvent(1, "ALQ-001", 5, "FIR-101", 10, 4, 1000000m, fecha);
+        eventoVehiculo.AlquilerId.Should().Be(1);
+        eventoVehiculo.NumeroContrato.Should().Be("ALQ-001");
+        eventoVehiculo.VehiculoId.Should().Be(5);
         eventoVehiculo.PlacaVehiculo.Should().Be("FIR-101");
+        eventoVehiculo.ClienteId.Should().Be(10);
+        eventoVehiculo.DiasAlquiler.Should().Be(4);
         eventoVehiculo.Total.Should().Be(1000000m);
+
+        var eventoDespacho = new DespachoEnRutaDomainEvent(1, 10, "Calle 100 # 15-20", "Carlos Perez", fecha);
+        eventoDespacho.DespachoId.Should().Be(1);
+        eventoDespacho.VentaId.Should().Be(10);
+        eventoDespacho.DireccionEntrega.Should().Be("Calle 100 # 15-20");
+        eventoDespacho.ContactoRecibe.Should().Be("Carlos Perez");
+        eventoDespacho.OccurredOn.Should().Be(fecha);
+
+        var eventoEntregado = new DespachoEntregadoDomainEvent(1, 10, "Bogotá", fecha.AddHours(2), fecha);
+        eventoEntregado.DespachoId.Should().Be(1);
+        eventoEntregado.VentaId.Should().Be(10);
+        eventoEntregado.Ciudad.Should().Be("Bogotá");
+        eventoEntregado.FechaEntrega.Should().Be(fecha.AddHours(2));
+        eventoEntregado.OccurredOn.Should().Be(fecha);
     }
 
-    // =========================================================================
-    // 4. DOMAIN EXCEPTIONS TESTS
-    // =========================================================================
+    // 4. Pruebas de excepciones de reglas del negocio
 
+    // Comprueba que el error de falta de existencias informe el código del producto, cuántas unidades hay y cuántas se pidieron.
     [Fact]
     public void StockInsuficienteException_ShouldExposeDiagnosticProperties()
     {
@@ -173,6 +207,7 @@ public class DomainDddTests
         ex.Should().BeAssignableTo<DomainException>();
     }
 
+    // Verifica que el error de regla de negocio conserve el código de la regla incumplida y su mensaje explicativo.
     [Fact]
     public void ReglaNegocioException_ShouldContainRuleCode()
     {
@@ -182,10 +217,9 @@ public class DomainDddTests
         ex.Should().BeAssignableTo<DomainException>();
     }
 
-    // =========================================================================
-    // 5. AGGREGATE ROOT & ENTITY DOMAIN METHODS TESTS
-    // =========================================================================
+    // 5. Pruebas de acciones sobre productos, ventas y alquileres
 
+    // Comprueba que al descontar unidades de un producto baje su inventario y se genere una alerta cuando queden 10 o menos.
     [Fact]
     public void Producto_DescontarStock_ShouldDecreaseStockAndEmitStockBajoEvent()
     {
@@ -198,21 +232,24 @@ public class DomainDddTests
             Precio = 32000m
         };
 
-        // Act: descontar 8 unidades (quedan 7, que es <= 10)
+        // Descontar 8 unidades (quedan 7, lo que activa la alerta de pocas existencias)
         producto.DescontarStock(8);
 
-        // Assert
+        // Comprobar que el inventario bajó a 7 y se registró la alerta
         producto.Stock.Should().Be(7);
         producto.DomainEvents.Should().ContainSingle();
         var evento = producto.DomainEvents.First().Should().BeOfType<StockBajoDomainEvent>().Subject;
+        evento.ProductoId.Should().Be(1);
         evento.CodigoProducto.Should().Be("PROD-002");
+        evento.NombreProducto.Should().Be("Cemento Gris");
         evento.StockRestante.Should().Be(7);
 
-        // Limpiar eventos
+        // Limpiar la lista de avisos
         producto.ClearDomainEvents();
         producto.DomainEvents.Should().BeEmpty();
     }
 
+    // Verifica que al intentar descontar más unidades de las que existen en bodega se lance un error de inventario insuficiente.
     [Fact]
     public void Producto_DescontarStock_ShouldThrowStockInsuficienteException_WhenExceedingStock()
     {
@@ -230,6 +267,7 @@ public class DomainDddTests
            .And.StockDisponible.Should().Be(5);
     }
 
+    // Comprueba que al confirmar una venta su estado cambie a 'Completada' y se registre el aviso correspondiente.
     [Fact]
     public void Venta_RegistrarVenta_ShouldSetCompletadaAndEmitDomainEvent()
     {
@@ -248,10 +286,13 @@ public class DomainDddTests
         venta.Estado.Should().Be("Completada");
         venta.DomainEvents.Should().ContainSingle();
         var evt = venta.DomainEvents.First().Should().BeOfType<VentaRegistradaDomainEvent>().Subject;
+        evt.VentaId.Should().Be(10);
         evt.NumeroVenta.Should().Be("VENTA-2026-999");
+        evt.ClienteId.Should().Be(5);
         evt.Total.Should().Be(119000m);
     }
 
+    // Verifica que al cancelar una venta pase a estado 'Anulada' y que no se permita volver a anularla por segunda vez.
     [Fact]
     public void Venta_CancelarVenta_ShouldSetAnuladaAndEmitDomainEvent()
     {
@@ -267,14 +308,17 @@ public class DomainDddTests
         venta.Estado.Should().Be("Anulada");
         venta.DomainEvents.Should().ContainSingle();
         var evt = venta.DomainEvents.First().Should().BeOfType<VentaCanceladaDomainEvent>().Subject;
+        evt.VentaId.Should().Be(10);
+        evt.NumeroVenta.Should().Be("VENTA-2026-999");
         evt.Motivo.Should().Be("Cliente solicitó retracto");
 
-        // Intentar anular de nuevo debe lanzar excepción
+        // Intentar anular de nuevo la misma venta debe lanzar error
         var actDuplicada = () => venta.CancelarVenta("Otra anulación");
         actDuplicada.Should().Throw<ReglaNegocioException>()
                     .And.CodigoRegla.Should().Be("Venta.YaAnulada");
     }
 
+    // Comprueba que al iniciar un alquiler se calcule el monto total y al finalizarlo cambie su estado a 'Finalizado'.
     [Fact]
     public void Alquiler_IniciarYFinalizar_ShouldEmitDomainEvents()
     {
@@ -292,67 +336,68 @@ public class DomainDddTests
             ValorDiario = 250000m
         };
 
-        // Act: Iniciar
+        // Iniciar el alquiler
         alquiler.IniciarAlquiler();
 
         alquiler.Total.Should().Be(1000000m);
         alquiler.Estado.Should().Be("Activo");
         alquiler.DomainEvents.Should().ContainSingle(e => e is VehiculoAlquiladoDomainEvent);
 
-        // Act: Finalizar
+        // Finalizar el alquiler
         alquiler.FinalizarAlquiler();
         alquiler.Estado.Should().Be("Finalizado");
-        alquiler.DomainEvents.Should().Contain(e => e is VehiculoLiberadoDomainEvent);
+        var eventoLiberado = alquiler.DomainEvents.OfType<VehiculoLiberadoDomainEvent>().Single();
+        eventoLiberado.VehiculoId.Should().Be(3);
+        eventoLiberado.PlacaVehiculo.Should().Be("FIR-101");
+        eventoLiberado.NumeroContrato.Should().Be("ALQ-2026-100");
     }
 
-    // =========================================================================
-    // 6. DOMAIN ENUMS TESTS
-    // =========================================================================
+    // 6. Pruebas de listados de opciones del negocio
 
+    // Verifica que todas las listas de estados, tipos de vehículo, unidades de medida y medios de pago contengan los valores esperados.
     [Fact]
     public void DomainEnums_ShouldHaveExpectedValuesAndConsistency()
     {
-        // EstadoVenta
+        // Estados de venta
         Enum.IsDefined(typeof(EstadoVenta), EstadoVenta.Pendiente).Should().BeTrue();
         Enum.IsDefined(typeof(EstadoVenta), EstadoVenta.Completada).Should().BeTrue();
         Enum.IsDefined(typeof(EstadoVenta), EstadoVenta.Anulada).Should().BeTrue();
 
-        // EstadoDespacho
+        // Estados de despacho
         Enum.GetNames<EstadoDespacho>().Should().Contain(new[] { "Pendiente", "EnRuta", "Entregado", "Cancelado" });
 
-        // EstadoVehiculo
+        // Estados de vehículo
         Enum.GetNames<EstadoVehiculo>().Should().Contain(new[] { "Disponible", "Alquilado", "EnMantenimiento" });
 
-        // EstadoAlquiler
+        // Estados de alquiler
         Enum.GetNames<EstadoAlquiler>().Should().Contain(new[] { "Activo", "Finalizado", "Cancelado" });
 
-        // TipoMovimientoInventario
+        // Tipos de movimiento de inventario
         Enum.GetNames<TipoMovimientoInventario>().Should().Contain(new[] { "Entrada", "Salida", "Ajuste" });
 
-        // TipoVehiculo
+        // Tipos de vehículo
         Enum.GetNames<TipoVehiculo>().Should().Contain("VolquetaSencilla");
         Enum.GetNames<TipoVehiculo>().Should().Contain("Retroexcavadora");
 
-        // TipoMetodoPago
+        // Tipos de método de pago
         Enum.GetNames<TipoMetodoPago>().Should().Contain(new[] { "Efectivo", "TransferenciaBancaria", "TarjetaCredito", "Nequi" });
 
-        // TipoIdentificacion
-        Enum.GetNames<TipoIdentificacion>().Should().Contain(new[] { "CedulaCiudadania", "NIT", "RUT" });
+        // Tipos de documento de identificación
+        Enum.GetNames<TipoIdentificacion>().Should().Contain(new[] { "CedulaCiudadania", "Nit", "Rut" });
 
-        // UnidadMedida
+        // Unidades de medida de materiales
         Enum.GetNames<UnidadMedida>().Should().Contain(new[] { "Bulto", "MetroCubico", "Tonelada", "Galon" });
 
-        // PrioridadDespacho
+        // Niveles de prioridad de despacho
         Enum.GetNames<PrioridadDespacho>().Should().Contain(new[] { "Baja", "Normal", "Alta", "Urgente" });
 
-        // EstadoCotizacion
+        // Estados de cotización
         Enum.GetNames<EstadoCotizacion>().Should().Contain(new[] { "Borrador", "Enviada", "Aprobada", "Rechazada", "Vencida" });
     }
 
-    // =========================================================================
-    // 7. DOMAIN ABSTRACTIONS CONTRACT TESTS
-    // =========================================================================
+    // 7. Pruebas de las interfaces de acceso a datos y servicios base
 
+    // Comprueba que todos los repositorios específicos hereden las operaciones básicas de consulta y guardado.
     [Fact]
     public void DomainRepositories_ShouldInheritFromGenericRepository()
     {
@@ -367,6 +412,7 @@ public class DomainDddTests
         typeof(IRepository<Proveedor>).IsAssignableFrom(typeof(IProveedorRepository)).Should().BeTrue();
     }
 
+    // Verifica que el coordinador de guardado en base de datos incluya los métodos para iniciar, confirmar y deshacer operaciones.
     [Fact]
     public void UnitOfWork_ShouldDefineTransactionAndPersistenceContracts()
     {
@@ -379,6 +425,7 @@ public class DomainDddTests
         uowType.GetMethod(nameof(IUnitOfWork.RollbackTransactionAsync)).Should().NotBeNull();
     }
 
+    // Comprueba que el distribuidor de avisos del negocio defina los métodos para enviar notificaciones internas.
     [Fact]
     public void DomainEventsDispatcher_ShouldDefineDispatchContracts()
     {
@@ -388,6 +435,7 @@ public class DomainDddTests
         dispatcherType.GetMethod(nameof(IDomainEventDispatcher.DispatchEventAsync)).Should().NotBeNull();
     }
 
+    // Verifica que el proveedor de fecha y hora del sistema exponga la hora actual y la fecha del día.
     [Fact]
     public void DateTimeProvider_ShouldExposeRequiredTimeProperties()
     {
@@ -398,4 +446,3 @@ public class DomainDddTests
         providerType.GetProperty(nameof(IDateTimeProvider.Today)).Should().NotBeNull();
     }
 }
-

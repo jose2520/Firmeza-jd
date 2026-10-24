@@ -1,3 +1,7 @@
+// Controlador para administrar las categorías de productos y materiales de construcción.
+// Permite listar y buscar categorías de forma pública, así como crear, editar y desactivar
+// categorías cuando el usuario tiene permisos de administrador.
+
 using AutoMapper;
 using Firmeza.Application.DTOs;
 using Firmeza.Domain.Entities;
@@ -8,10 +12,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.API.Controllers;
 
-/// <summary>
-/// Gestiona las familias y categorías del catálogo ferretero, materiales y maquinaria de construcción.
-/// RUTA BASE: /api/Categories
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
@@ -19,18 +19,14 @@ public class CategoriesController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
 
+    // Recibe la conexión a la base de datos y el convertidor de datos para las respuestas.
     public CategoriesController(ApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;
     }
 
-    /// <summary>
-    /// Lista las categorías del catálogo con soporte para filtros por estado activo y búsqueda por texto.
-    /// ACCESO: Público.
-    /// </summary>
-    /// <param name="soloActivas">Indica si solo se deben listar las categorías activas (por defecto true).</param>
-    /// <param name="busqueda">Término de búsqueda opcional por nombre o descripción.</param>
+    // Obtiene la lista de categorías del catálogo, permitiendo filtrar solo las activas o buscar por texto.
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<CategoriaDto>>> GetAll(
@@ -61,10 +57,7 @@ public class CategoriesController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<CategoriaDto>>(categorias));
     }
 
-    /// <summary>
-    /// Consulta el detalle de una categoría por su ID incluyendo el conteo de artículos vinculados.
-    /// ACCESO: Público.
-    /// </summary>
+    // Busca y devuelve los datos de una categoría específica según su número identificador.
     [HttpGet("{id:int}")]
     [AllowAnonymous]
     public async Task<ActionResult<CategoriaDto>> GetById(int id)
@@ -80,10 +73,7 @@ public class CategoriesController : ControllerBase
         return Ok(_mapper.Map<CategoriaDto>(categoria));
     }
 
-    /// <summary>
-    /// Consulta todos los productos y materiales pertenecientes a una categoría específica.
-    /// ACCESO: Público.
-    /// </summary>
+    // Devuelve todos los productos activos que pertenecen a una categoría determinada.
     [HttpGet("{id:int}/products")]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ProductoDto>>> GetProducts(int id)
@@ -95,6 +85,7 @@ public class CategoriesController : ControllerBase
         var productos = await _context.Productos
             .AsNoTracking()
             .Include(p => p.Categoria)
+            .Include(p => p.Proveedor)
             .Where(p => p.CategoriaId == id && p.Activo)
             .OrderBy(p => p.Nombre)
             .ToListAsync();
@@ -102,10 +93,7 @@ public class CategoriesController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<ProductoDto>>(productos));
     }
 
-    /// <summary>
-    /// Crea una nueva categoría o línea comercial en el catálogo.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Registra una nueva categoría verificando antes que no exista otra con el mismo nombre.
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoriaDto>> Create([FromBody] CreateCategoriaDto dto)
@@ -120,10 +108,7 @@ public class CategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = categoria.Id }, _mapper.Map<CategoriaDto>(categoria));
     }
 
-    /// <summary>
-    /// Actualiza una categoría existente.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Modifica el nombre, descripción o estado de una categoría existente.
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoriaDto>> Update(int id, [FromBody] UpdateCategoriaDto dto)
@@ -146,13 +131,7 @@ public class CategoriesController : ControllerBase
         return Ok(_mapper.Map<CategoriaDto>(categoria));
     }
 
-    /// <summary>
-    /// Elimina o desactiva una categoría. Si posee productos asignados, aplica borrado lógico (Activo = false)
-    /// para proteger la integridad referencial del catálogo.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
-    /// <param name="id">ID de la categoría.</param>
-    /// <param name="fisico">Si es true y no tiene productos, elimina la fila físicamente.</param>
+    // Elimina o desactiva una categoría; si ya tiene productos asociados, solo la marca como inactiva para no perder historial.
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id, [FromQuery] bool fisico = false)
@@ -166,7 +145,7 @@ public class CategoriesController : ControllerBase
 
         if (categoria.Productos.Any())
         {
-            // Protección de integridad referencial: Borrado lógico
+            // Desactivación segura cuando existen productos vinculados
             categoria.Activo = false;
             await _context.SaveChangesAsync();
 
@@ -193,10 +172,7 @@ public class CategoriesController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Alterna rápidamente el estado activo/inactivo de una categoría.
-    /// ACCESO: Requiere rol 'Admin'.
-    /// </summary>
+    // Cambia rápidamente el estado de una categoría entre activa e inactiva.
     [HttpPatch("{id:int}/toggle-status")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoriaDto>> ToggleStatus(int id)

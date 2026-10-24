@@ -1,32 +1,15 @@
--- =============================================================================
--- BASE DE DATOS: firmeza_db (Motor: PostgreSQL 14+)
--- PROPOSITO:
---   Script DDL (Data Definition Language) principal para la creación de la 
---   estructura completa de la base de datos de la plataforma Firmeza.
--- 
--- ORIGEN DE LOS DATOS Y ORDEN DE EJECUCIÓN:
---   1. Este script debe ejecutarse PRIMERO sobre la base de datos vacía 'firmeza_db'.
---   2. Crea las tablas de seguridad gestionadas por ASP.NET Core Identity (prefijo AspNet*).
---   3. Crea las 11 tablas del dominio comercial y logístico:
---      - categorias (clasificación de materiales y ferretería)
---      - proveedores (empresas y distribuidores aliados)
---      - metodos_pago (formas de recaudo comercial)
---      - productos (catálogo con categoría y proveedor)
---      - clientes (con documento, edad y vínculo Identity user_id)
---      - ventas (facturación con cliente y método de pago)
---      - detalles_venta (renglones de venta)
---      - despachos (entregas y logística en obra de construcción)
---      - movimientos_inventario (auditoría Kardex y trazabilidad)
---      - vehiculos (flota y maquinaria para fletes/alquiler)
---      - alquileres (contratos de alquiler de maquinaria/vehículos a clientes)
---   4. Crea índices para optimización de consultas B-Tree en llaves foráneas y campos de búsqueda.
---   5. Inserta datos mínimos iniciales para verificar la conectividad de la API.
--- =============================================================================
+-- Archivo: schema.sql (Base de datos PostgreSQL: firmeza_db)
+-- Propósito: Crea desde cero las 18 tablas del sistema Firmeza y sus relaciones.
+-- Orden de uso:
+--   1. Ejecuta este archivo primero sobre la base de datos vacía 'firmeza_db'.
+--   2. Crea las 7 tablas de usuarios, contraseñas y permisos de acceso.
+--   3. Crea las 11 tablas del negocio: categorías, proveedores, métodos de pago,
+--      productos, clientes, ventas, detalles de venta, despachos, movimientos de
+--      inventario, vehículos y alquileres.
+--   4. Agrega índices de búsqueda rápida y datos básicos de inicio.
 
--- =============================================================================
--- PARTE 1: TABLAS DE AUTENTICACIÓN Y ROLES (ASP.NET CORE IDENTITY)
--- Permite autenticación JWT, gestión de roles (Admin, etc.) y control de acceso.
--- =============================================================================
+-- PARTE 1: TABLAS DE USUARIOS Y PERMISOS DE ACCESO
+-- Guardan las cuentas de usuario, sus contraseñas protegidas y los roles de trabajo.
 
 -- 1. Roles del Sistema
 CREATE TABLE IF NOT EXISTS "AspNetRoles" (

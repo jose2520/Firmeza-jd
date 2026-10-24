@@ -1,56 +1,26 @@
+// Archivo: IClienteService.cs
+// Qué es: Plantilla de acciones para la administración de clientes.
+// Para qué sirve: Define las funciones obligatorias para listar, buscar, crear, actualizar y desactivar clientes en el sistema.
+
 using Firmeza.Application.DTOs;
 
 namespace Firmeza.Application.Interfaces;
 
-/// <summary>
-/// Contrato de servicio para la gestión de clientes en el sistema.
-/// 
-/// PARA QUÉ SIRVE:
-///   Define las operaciones de negocio para listar, consultar por identificador,
-///   registrar nuevos clientes, actualizar datos de contacto y realizar bajas lógicas (Soft Delete).
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Las operaciones interactúan con la tabla 'clientes' de la base de datos PostgreSQL ('firmeza_db').
-/// </summary>
+// Define las operaciones disponibles para manejar la información de los clientes.
 public interface IClienteService
 {
-    /// <summary>
-    /// Obtiene la lista de todos los clientes activos en el sistema.
-    /// Origen de datos: Consulta SQL 'SELECT * FROM clientes WHERE activo = TRUE' en PostgreSQL.
-    /// </summary>
-    /// <returns>Colección de clientes proyectados a ClienteDto.</returns>
+    // Obtiene la lista de todos los clientes que están activos en el sistema.
     Task<IEnumerable<ClienteDto>> GetAllAsync();
 
-    /// <summary>
-    /// Busca un cliente específico por su ID único de base de datos.
-    /// Origen de datos: Consulta SQL 'SELECT * FROM clientes WHERE id = @id AND activo = TRUE' en PostgreSQL.
-    /// </summary>
-    /// <param name="id">Identificador numérico de la clave primaria.</param>
-    /// <returns>El cliente encontrado o null si no existe o está inactivo.</returns>
+    // Busca y devuelve los datos de un cliente usando su número identificador único.
     Task<ClienteDto?> GetByIdAsync(int id);
 
-    /// <summary>
-    /// Registra un nuevo cliente validando unicidad de identificación y correo.
-    /// Origen de datos: Inserción en la tabla 'clientes' con datos provenientes del cuerpo HTTP (JSON).
-    /// </summary>
-    /// <param name="dto">Datos del nuevo cliente a crear.</param>
-    /// <returns>El cliente persistido con su ID asignado.</returns>
+    // Registra un cliente nuevo revisando antes que su documento o correo no estén repetidos.
     Task<ClienteDto> CreateAsync(CreateClienteDto dto);
 
-    /// <summary>
-    /// Actualiza los datos de un cliente existente.
-    /// Origen de datos: Actualización en la tabla 'clientes' a partir de datos del cuerpo HTTP (JSON).
-    /// </summary>
-    /// <param name="id">ID del cliente a modificar.</param>
-    /// <param name="dto">Nuevos datos a aplicar.</param>
-    /// <returns>El cliente actualizado o null si no fue localizado.</returns>
+    // Modifica los datos personales o de contacto de un cliente que ya existe.
     Task<ClienteDto?> UpdateAsync(int id, UpdateClienteDto dto);
 
-    /// <summary>
-    /// Realiza la baja lógica (Soft Delete) del cliente, marcando 'activo = FALSE'.
-    /// Origen de datos: Actualización de la columna 'activo' en la tabla 'clientes' de PostgreSQL.
-    /// </summary>
-    /// <param name="id">ID del cliente a desactivar.</param>
-    /// <returns>True si se desactivó con éxito, False si no se encontró.</returns>
+    // Desactiva un cliente para que no aparezca disponible sin borrar su historial de compras.
     Task<bool> DeleteAsync(int id);
 }

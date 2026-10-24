@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Producto en la tabla "productos" de la base de datos.
+// Configura sus columnas de código, nombre, precio, stock y sus relaciones con "categorias" y "proveedores".
+// Asegura que el código de cada producto sea único para evitar duplicados en el inventario.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class ProductoConfiguration : IEntityTypeConfiguration<Producto>
 {
+    // Configura la tabla "productos", los tamaños de texto, el precio con decimales y las relaciones opcionales.
     public void Configure(EntityTypeBuilder<Producto> builder)
     {
         builder.HasKey(e => e.Id).HasName("productos_pkey");

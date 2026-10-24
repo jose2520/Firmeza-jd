@@ -1,14 +1,10 @@
+// Archivo: ProductoDto.cs
+// Qué es: Estructuras de datos para el manejo de productos del catálogo.
+// Para qué sirve: Transporta la información de precios, existencias, categoría y proveedor al consultar, crear o modificar un artículo.
+
 namespace Firmeza.Application.DTOs;
 
-/// <summary>
-/// DTO de respuesta para la representación de un producto en el catálogo.
-/// 
-/// PARA QUÉ SIRVE:
-///   Expone los atributos comerciales y de inventario de un producto hacia el cliente HTTP.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Proyectado desde la entidad Producto mapeada en la tabla 'productos' de PostgreSQL.
-/// </summary>
+// Muestra toda la información comercial y de inventario de un producto del catálogo.
 public record ProductoDto(
     int Id,
     string Codigo,
@@ -19,41 +15,29 @@ public record ProductoDto(
     bool Activo,
     DateTime CreadoEn,
     int? CategoriaId = null,
-    string? CategoriaNombre = null
+    string? CategoriaNombre = null,
+    int? ProveedorId = null,
+    string? ProveedorNombre = null
 );
 
-/// <summary>
-/// DTO de solicitud para el registro de un nuevo artículo en inventario.
-/// 
-/// PARA QUÉ SIRVE:
-///   Define los datos requeridos para registrar un producto en el sistema (código SKU, nombre, precio base y existencias iniciales).
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Enviado en formato JSON en el cuerpo (Body) de peticiones POST /api/products.
-/// </summary>
+// Datos necesarios para registrar un artículo nuevo en la tienda con su código, precio y cantidad inicial.
 public record CreateProductoDto(
     string Codigo,
     string Nombre,
     string? Descripcion,
     decimal Precio,
     int Stock,
-    int? CategoriaId = null
+    int? CategoriaId = null,
+    int? ProveedorId = null
 );
 
-/// <summary>
-/// DTO de solicitud para actualizar precios, descripción o stock de un producto.
-/// 
-/// PARA QUÉ SIRVE:
-///   Permite modificar la ficha técnica, ajustar precios o cambiar el estado activo del producto.
-/// 
-/// ORIGEN DE LOS DATOS:
-///   Enviado en formato JSON en el cuerpo (Body) de peticiones PUT /api/products/{id}.
-/// </summary>
+// Datos que se reciben para cambiar el nombre, descripción, precio, cantidad disponible o estado de un producto.
 public record UpdateProductoDto(
     string Nombre,
     string? Descripcion,
     decimal Precio,
     int Stock,
     bool Activo,
-    int? CategoriaId = null
+    int? CategoriaId = null,
+    int? ProveedorId = null
 );

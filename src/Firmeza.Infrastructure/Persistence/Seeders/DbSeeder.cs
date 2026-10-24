@@ -1,22 +1,19 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+// Clase que carga los datos básicos iniciales en la base de datos cuando arranca la aplicación.
+// Trabaja con las tablas de roles ("AspNetRoles"), usuarios ("AspNetUsers") y formas de pago ("metodos_pago").
+// Revisa si los datos ya existen antes de crearlos para no duplicar información en cada inicio.
 using Firmeza.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Infrastructure.Persistence.Seeders;
 
-/// <summary>
-/// Implementación de siembra programática idempotente para inicializar datos esenciales de Firmeza.
-/// Garantiza la existencia de roles, administrador y catálogos mínimos requeridos.
-/// </summary>
 public class DbSeeder : IDbSeeder
 {
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ApplicationDbContext _context;
 
+    // Recibe los administradores de roles, de usuarios y el contexto de la base de datos.
     public DbSeeder(
         RoleManager<IdentityRole> roleManager,
         UserManager<IdentityUser> userManager,
@@ -27,13 +24,20 @@ public class DbSeeder : IDbSeeder
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
+    // Actualiza las tablas de la base de datos y ejecuta la creación de roles, usuario administrador y métodos de pago.
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        if (_context.Database.IsRelational())
+        {
+            await _context.Database.MigrateAsync(cancellationToken);
+        }
+
         await SeedRolesAsync();
         await SeedAdminUserAsync();
         await SeedPaymentMethodsAsync(cancellationToken);
     }
 
+    // Crea los roles del sistema (Admin, Vendedor, Cliente, etc.) si todavía no están registrados.
     private async Task SeedRolesAsync()
     {
         string[] roles = {
@@ -50,6 +54,7 @@ public class DbSeeder : IDbSeeder
         }
     }
 
+    // Crea el usuario administrador por defecto con su correo y contraseña si aún no existe.
     private async Task SeedAdminUserAsync()
     {
         const string adminEmail = "admin@firmeza.com";
@@ -73,6 +78,7 @@ public class DbSeeder : IDbSeeder
         }
     }
 
+    // Agrega los métodos de pago iniciales en la tabla "metodos_pago" si la tabla está vacía.
     private async Task SeedPaymentMethodsAsync(CancellationToken cancellationToken)
     {
         if (!await _context.MetodosPago.AnyAsync(cancellationToken))

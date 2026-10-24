@@ -1,32 +1,23 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para buscar, filtrar y validar los productos del catálogo.
+// En el negocio de Firmeza, sirve para encontrar materiales por código, listar artículos por categoría,
+// detectar cuáles tienen pocas unidades en bodega y evitar códigos repetidos.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para el catálogo de Productos y materiales de construcción.
-/// </summary>
+// Define las funciones para consultar y administrar el catálogo de productos y materiales de construcción.
 public interface IProductoRepository : IRepository<Producto>
 {
-    /// <summary>
-    /// Busca un producto por su código único de referencia o SKU.
-    /// </summary>
+    // Busca un producto específico usando su código de referencia o código de barras.
     Task<Producto?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene todos los productos pertenecientes a una categoría específica.
-    /// </summary>
+    // Devuelve todos los productos que pertenecen a una categoría o familia determinada.
     Task<IReadOnlyList<Producto>> GetByCategoriaIdAsync(int categoriaId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene la lista de productos cuyo stock actual es menor o igual a su stock mínimo de seguridad.
-    /// </summary>
+    // Obtiene la lista de productos con pocas existencias en bodega para saber cuáles se deben surtir pronto.
     Task<IReadOnlyList<Producto>> GetProductosConStockBajoAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Comprueba si ya existe un producto con el código SKU dado, opcionalmente excluyendo un ID específico.
-    /// </summary>
+    // Comprueba si ya existe otro producto registrado con el mismo código de referencia.
     Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null, CancellationToken cancellationToken = default);
 }

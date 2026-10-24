@@ -1,22 +1,17 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para consultar el historial de entradas y salidas de mercancía.
+// En el negocio de Firmeza, sirve para auditar los movimientos de bodega de cada material y revisar
+// rápidamente los últimos cambios de inventario realizados.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para el Kardex y la trazabilidad de Movimientos de Inventario.
-/// </summary>
+// Define las funciones para consultar y registrar el historial de movimientos de inventario en bodega.
 public interface IMovimientoInventarioRepository : IRepository<MovimientoInventario>
 {
-    /// <summary>
-    /// Obtiene el historial completo de movimientos registrados para un producto determinado.
-    /// </summary>
+    // Obtiene todo el historial de entradas, salidas y ajustes registrados para un producto específico.
     Task<IReadOnlyList<MovimientoInventario>> GetByProductoIdAsync(int productoId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene los movimientos de inventario más recientes registrados en el sistema.
-    /// </summary>
+    // Obtiene los movimientos de bodega más recientes registrados en el sistema hasta la cantidad indicada.
     Task<IReadOnlyList<MovimientoInventario>> GetUltimosMovimientosAsync(int cantidad = 50, CancellationToken cancellationToken = default);
 }

@@ -1,22 +1,17 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+// Este archivo define las operaciones para consultar y administrar las categorías de productos.
+// En el negocio de Firmeza, sirve para organizar el catálogo ferretero por familias (como cementos,
+// aceros o herramientas) y facilitar la búsqueda de materiales activos.
+
 using Firmeza.Domain.Entities;
 
 namespace Firmeza.Domain.Abstractions;
 
-/// <summary>
-/// Contrato de repositorio de dominio para las Categorías o familias de productos.
-/// </summary>
+// Define las funciones para buscar y guardar las categorías o familias de productos.
 public interface ICategoriaRepository : IRepository<Categoria>
 {
-    /// <summary>
-    /// Busca una categoría por su nombre exacto.
-    /// </summary>
+    // Busca una categoría específica por su nombre exacto.
     Task<Categoria?> GetByNombreAsync(string nombre, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Obtiene únicamente las categorías marcadas como activas.
-    /// </summary>
+    // Obtiene únicamente la lista de categorías que están habilitadas para usarse en el catálogo.
     Task<IReadOnlyList<Categoria>> GetActivasAsync(CancellationToken cancellationToken = default);
 }

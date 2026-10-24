@@ -1,22 +1,6 @@
-// =================================================================================================
-// SERVICIO: VentaService.cs
-// CAPA: Firmeza.Infrastructure (Capa de Infraestructura y Persistencia)
-// CONTRATO: IVentaService (Firmeza.Application)
-// PROPÓSITO:
-//   Implementa la lógica del núcleo del negocio para el procesamiento de transacciones comerciales:
-//   - Consulta de ventas con relaciones completas (Cliente y Renglones de Productos).
-//   - Creación transaccional de ventas con validación de cliente, control de stock y cálculo de IVA.
-//   - Anulación de ventas y reincorporación de productos al inventario.
-//
-// ORIGEN Y DESTINO DE LOS DATOS:
-//   - Base de Datos Relacional: PostgreSQL (vía ApplicationDbContext y Npgsql).
-//   - Tablas Afectadas:
-//     * 'clientes': Lectura y validación de estado activo.
-//     * 'productos': Lectura, verificación y actualización del campo 'stock'.
-//     * 'ventas': Inserción de la cabecera (subtotal, iva, total, estado, fecha).
-//     * 'detalles_venta': Inserción de los renglones adquiridos (cantidad, precio, subtotal).
-// =================================================================================================
-
+// Servicio principal para registrar, consultar y anular ventas en el sistema.
+// Trabaja con las tablas "ventas", "detalles_venta", "clientes", "productos", "metodos_pago" y "movimientos_inventario".
+// Al crear o anular una venta, descuenta o devuelve automáticamente las unidades del inventario y guarda el movimiento.
 using Firmeza.Application.DTOs;
 using Firmeza.Application.Interfaces;
 using Firmeza.Domain.Entities;
@@ -29,16 +13,13 @@ public class VentaService : IVentaService
 {
     private readonly ApplicationDbContext _context;
 
+    // Inicializa el servicio de ventas con la conexión a la base de datos.
     public VentaService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    /// <summary>
-    /// Obtiene todas las ventas con su cliente y sus productos relacionados.
-    /// ORIGEN DE DATOS: PostgreSQL -> JOIN entre tablas 'ventas', 'clientes', 'detalles_venta' y 'productos'.
-    /// Optimizado con .AsNoTracking() para evitar sobrecarga de seguimiento de entidades en memoria.
-    /// </summary>
+    // Obtiene todas las ventas registradas incluyendo los datos del cliente y los productos comprados.
     public async Task<IEnumerable<VentaDto>> GetAllAsync()
     {
         return await _context.Ventas
@@ -71,10 +52,7 @@ public class VentaService : IVentaService
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Consulta una venta específica por su identificador primario.
-    /// ORIGEN DE DATOS: PostgreSQL -> SELECT en 'ventas' con sus relaciones por id = {id}.
-    /// </summary>
+    // Busca y devuelve una venta específica por su ID junto con la información de su cliente y productos.
     public async Task<VentaDto?> GetByIdAsync(int id)
     {
         var v = await _context.Ventas
@@ -109,15 +87,7 @@ public class VentaService : IVentaService
         );
     }
 
-    /// <summary>
-    /// Procesa y registra una venta en una transacción atómica:
-    ///   1. Verifica que el cliente exista y esté activo en la tabla 'clientes'.
-    ///   2. Consolida ítems duplicados y valida que los productos existan y estén activos en 'productos'.
-    ///   3. Comprueba que el stock sea suficiente y descuenta las unidades.
-    ///   4. Calcula automáticamente el IVA (19%) sobre el subtotal acumulado.
-    ///   5. Genera el código único 'VENTA-YYYYMMDD-XXXXXX'.
-    ///   6. Guarda los cambios en PostgreSQL (inserta en 'ventas' y 'detalles_venta', actualiza 'productos').
-    /// </summary>
+    // Registra una nueva venta validando el cliente, descontando el stock de cada producto, calculando el IVA y guardando el historial de salida.
     public async Task<VentaDto> CreateAsync(CreateVentaDto dto)
     {
         if (dto.Detalles == null || dto.Detalles.Count == 0)
@@ -125,14 +95,24 @@ public class VentaService : IVentaService
             throw new InvalidOperationException("La venta debe contener al menos un producto.");
         }
 
-        // 1. Validar cliente en PostgreSQL
+        // 1. Validar que el cliente exista y esté activo
         var cliente = await _context.Clientes.FindAsync(dto.ClienteId);
         if (cliente == null || !cliente.Activo)
         {
             throw new InvalidOperationException($"El cliente con ID {dto.ClienteId} no existe o se encuentra inactivo.");
         }
 
-        // 2. Consolidar productos duplicados para verificar stock total correctamente
+        // 1.1 Validar el método de pago si fue indicado
+        if (dto.MetodoPagoId.HasValue)
+        {
+            var metodoPago = await _context.MetodosPago.FindAsync(dto.MetodoPagoId.Value);
+            if (metodoPago == null || !metodoPago.Activo)
+            {
+                throw new InvalidOperationException($"El método de pago con ID {dto.MetodoPagoId.Value} no existe o se encuentra inactivo.");
+            }
+        }
+
+        // 2. Agrupar productos repetidos en el pedido para revisar el stock total requerido
         var consolidatedItems = dto.Detalles
             .GroupBy(d => d.ProductoId)
             .Select(g => new CreateDetalleVentaDto(g.Key, g.Sum(x => x.Cantidad)))
@@ -145,8 +125,10 @@ public class VentaService : IVentaService
 
         decimal subtotal = 0;
         var detallesVenta = new List<DetalleVenta>();
+        var numeroVenta = $"VENTA-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+        var fechaActual = DateTime.UtcNow;
 
-        // 3. Validar inventario y descontar stock
+        // 3. Validar inventario, descontar stock y registrar salida en "movimientos_inventario"
         foreach (var item in consolidatedItems)
         {
             if (item.Cantidad <= 0)
@@ -164,8 +146,9 @@ public class VentaService : IVentaService
                 throw new InvalidOperationException($"Stock insuficiente para '{producto.Nombre}'. Disponible: {producto.Stock}, Solicitado: {item.Cantidad}.");
             }
 
-            // Descontar inventario en la entidad de EF Core
-            producto.Stock -= item.Cantidad;
+            var stockPrevio = producto.Stock;
+            producto.DescontarStock(item.Cantidad);
+            var stockPosterior = producto.Stock;
 
             var precioUnitario = producto.Precio;
             var lineaSubtotal = precioUnitario * item.Cantidad;
@@ -179,29 +162,40 @@ public class VentaService : IVentaService
                 Subtotal = lineaSubtotal,
                 Producto = producto
             });
+
+            _context.MovimientosInventario.Add(new MovimientoInventario
+            {
+                ProductoId = producto.Id,
+                TipoMovimiento = "Salida",
+                Cantidad = item.Cantidad,
+                StockPrevio = stockPrevio,
+                StockPosterior = stockPosterior,
+                Referencia = numeroVenta,
+                Motivo = $"Salida automática por venta {numeroVenta}",
+                Fecha = fechaActual
+            });
         }
 
-        // 4. Cálculo fiscal: IVA del 19% (tarifa general en Colombia) y Total
+        // 4. Calcular el IVA del 19% y el valor total de la factura
         var iva = Math.Round(subtotal * 0.19m, 2);
         var total = subtotal + iva;
-
-        // 5. Generar código de factura único
-        var numeroVenta = $"VENTA-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
         var venta = new Venta
         {
             NumeroVenta = numeroVenta,
             ClienteId = cliente.Id,
+            MetodoPagoId = dto.MetodoPagoId,
             Cliente = cliente,
-            Fecha = DateTime.UtcNow,
+            Fecha = fechaActual,
             Subtotal = subtotal,
             Iva = iva,
             Total = total,
             Estado = "Completada",
             DetallesVenta = detallesVenta
         };
+        venta.RegistrarVenta();
 
-        // 6. Confirmar la transacción en PostgreSQL
+        // 5. Guardar la venta, sus detalles y los cambios de stock en la base de datos
         _context.Ventas.Add(venta);
         await _context.SaveChangesAsync();
 
@@ -228,12 +222,7 @@ public class VentaService : IVentaService
         );
     }
 
-    /// <summary>
-    /// Anula una venta completada:
-    ///   1. Busca la venta y carga sus productos.
-    ///   2. Reincorpora automáticamente las cantidades al 'stock' de cada producto en la tabla 'productos'.
-    ///   3. Cambia el campo 'estado' de la venta a 'Anulada' en la tabla 'ventas'.
-    /// </summary>
+    // Anula una venta existente, devuelve las cantidades de cada producto al inventario y registra la entrada en "movimientos_inventario".
     public async Task<bool> CancelAsync(int id)
     {
         var venta = await _context.Ventas
@@ -246,16 +235,29 @@ public class VentaService : IVentaService
             return false;
         }
 
-        // Reincorporar unidades al stock en PostgreSQL
+        var fechaActual = DateTime.UtcNow;
+
+        // Devolver las unidades al stock del producto y guardar el movimiento de entrada
         foreach (var detalle in venta.DetallesVenta)
         {
-            if (detalle.Producto != null)
+            var stockPrevio = detalle.Producto.Stock;
+            detalle.Producto.IncrementarStock(detalle.Cantidad);
+            var stockPosterior = detalle.Producto.Stock;
+
+            _context.MovimientosInventario.Add(new MovimientoInventario
             {
-                detalle.Producto.Stock += detalle.Cantidad;
-            }
+                ProductoId = detalle.Producto.Id,
+                TipoMovimiento = "Entrada",
+                Cantidad = detalle.Cantidad,
+                StockPrevio = stockPrevio,
+                StockPosterior = stockPosterior,
+                Referencia = venta.NumeroVenta,
+                Motivo = $"Reincorporación por anulación de venta {venta.NumeroVenta}",
+                Fecha = fechaActual
+            });
         }
 
-        venta.Estado = "Anulada";
+        venta.CancelarVenta("Anulación solicitada en sistema");
         await _context.SaveChangesAsync();
         return true;
     }

@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Venta en la tabla "ventas" de la base de datos.
+// Configura el número de factura, fecha, subtotal, IVA, total y sus uniones con "clientes" y "metodos_pago".
+// Asegura que el número de venta sea único e impide borrar clientes con ventas registradas.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class VentaConfiguration : IEntityTypeConfiguration<Venta>
 {
+    // Configura la tabla "ventas", sus columnas de valores monetarios y sus relaciones con cliente y pago.
     public void Configure(EntityTypeBuilder<Venta> builder)
     {
         builder.HasKey(e => e.Id).HasName("ventas_pkey");

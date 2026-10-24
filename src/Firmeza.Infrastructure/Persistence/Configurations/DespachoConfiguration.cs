@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Despacho en la tabla "despachos" de la base de datos.
+// Configura los datos de envío a domicilio y su relación directa con la tabla "ventas".
+// Permite registrar dirección, ciudad, contacto, costo de flete y estado de la entrega.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class DespachoConfiguration : IEntityTypeConfiguration<Despacho>
 {
+    // Configura la tabla "despachos", sus columnas de entrega y su unión con la venta correspondiente.
     public void Configure(EntityTypeBuilder<Despacho> builder)
     {
         builder.HasKey(e => e.Id).HasName("despachos_pkey");

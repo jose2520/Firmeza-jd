@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad DetalleVenta en la tabla "detalles_venta" de la base de datos.
+// Conecta cada renglón de una factura con las tablas "ventas" y "productos".
+// Guarda la cantidad vendida, el precio unitario y el subtotal de cada producto en la venta.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class DetalleVentaConfiguration : IEntityTypeConfiguration<DetalleVenta>
 {
+    // Configura la tabla "detalles_venta", los decimales de precios y las relaciones con producto y venta.
     public void Configure(EntityTypeBuilder<DetalleVenta> builder)
     {
         builder.HasKey(e => e.Id).HasName("detalles_venta_pkey");

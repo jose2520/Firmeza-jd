@@ -1,3 +1,6 @@
+// Define cómo se guarda la entidad Cliente en la tabla "clientes" de la base de datos.
+// Configura los campos personales del cliente como nombres, apellidos, identificación, correo y teléfono.
+// Asegura que el correo electrónico y la identificación no se repitan entre clientes.
 using Firmeza.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -6,6 +9,7 @@ namespace Firmeza.Infrastructure.Persistence.Configurations;
 
 public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 {
+    // Configura la tabla "clientes", el tamaño máximo de sus textos y las reglas de datos únicos.
     public void Configure(EntityTypeBuilder<Cliente> builder)
     {
         builder.HasKey(e => e.Id).HasName("clientes_pkey");
